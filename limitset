@@ -1,0 +1,56 @@
+#!/bin/bash
+
+
+listmanifolds=m003,m004,m006,m007,m009,m010,m011,m015,m016,m017,m019,m022,m023,m026,m027,m029,m030,m032,m033,m034,m035,m036,m037,m038,m043,m044,m045,m046,m052,m053,m054,m055,m060,m069,m070,m081,m082,m100,m117,m125,m129,m130,m135,m136,m137,m142,m146,m148,m149,m202,m203
+
+listfractales=m009-1,m015-2,m022-1,m023-1,m023-7,m029-1,m032-7,m034-1,m035-1,m038-1,m045-1,m045-8,m053-1,m053-4,m053-7,m081-1,m117-1,m129-1,m130-1,m137-5,m142-1,m146-3,m203-1
+
+
+if [[ $# -eq 0 ]]; then
+  echo "limitset: Error,no argument given.
+
+usage: limitset m004 3
+       computes the 3rd limit set of m004
+
+       limitset m004
+       computes every limitset of m004
+
+       limitset all
+       computes every limitset of every available manifold
+
+       limitset fractals
+       computes every limitset corresponding to each known fractal class
+
+list of available manifolds:"
+  echo $listmanifolds
+fi
+
+
+manifold=$1
+
+if [[ $manifold = 'all' ]]; then
+  for m in ${listmanifolds//,/ }
+  do
+    python python/rph-knot.py $m
+  done
+fi
+
+if [[ $manifold = 'fractals' ]]; then
+  for m in ${listfractales//,/ }
+  do
+    python python/rph-knot.py $m
+  done
+fi
+
+for m in ${listmanifolds//,/ }
+do
+  if [[ $manifold = $m ]]; then
+    if [[ $# -eq 2 ]]; then
+      python python/rph-knot.py $m $2
+    else
+      python python/rph-knot.py $m
+    fi
+  fi
+done
+
+rm python/*.pyc

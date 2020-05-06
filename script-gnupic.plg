@@ -1,0 +1,18 @@
+set term jpeg medium size 2000,2000
+
+set ticslevel 0
+set view equal xyz
+
+set origin 0.,0.
+set size 1.,1.
+
+
+unset xtics
+unset ztics
+unset ytics
+
+ang = 5
+
+set output "outpic.jpeg"
+set view 85,ang,2,1
+splot filename notitle with points pt 7 ps 0.25 lc rgb 'black'
