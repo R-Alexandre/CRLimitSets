@@ -1,0 +1,5 @@
+.DS_Store
+parse/
+*results/
+python/*.pyc
+python/__pycache__/
