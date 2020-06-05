@@ -6,9 +6,13 @@ import snappy
 import solution
 import grouphandler
 
+C_DTYPE = np.cdouble
 
 PATH = -1
 
+# Precision de PARI (provient de SnapPy)
+snappy.pari.set_real_precision(1000)
+snappy.pari.allocatemem(10**10,10**10)
 
 class UnipotentSolutions(object):
     """docstring for UnipotentSolutions."""
@@ -89,10 +93,13 @@ class UnipotentSolution(solution.Solution):
         self.solution = solution
         self.fundamental_group = fundamental_group
 
+        self.symmetries = np.array([self.from_word_to_matrix(g)
+                                    for g in grouphandler.GENERATORS])
+        self.elementary_symmetries = self.symmetries
 
     def from_word_to_matrix(self, word):
         if word == '':
-            return np.identity(3,dtype=np.dtype(np.clongdouble))
+            return np.identity(3,dtype=np.dtype(C_DTYPE))
 
         return convert_pari_matrix_to_numpy(self.solution.evaluate_word(word,
                                    self.fundamental_group))
@@ -124,11 +131,11 @@ def pari_to_numpy(x):
     y_re = real_pari_to_numpy(x_re)
     y_im = real_pari_to_numpy(x_im)
 
-    return np.clongdouble(y_re+y_im*1.j)
+    return C_DTYPE(y_re+y_im*1.j)
 
 def convert_pari_matrix_to_numpy(pari_matrix):
 
-    matrix = np.array(np.zeros((3,3), dtype=np.dtype(np.clongdouble)))
+    matrix = np.array(np.zeros((3,3), dtype=np.dtype(C_DTYPE)))
 
     for i in range(3):
         for j in range(3):

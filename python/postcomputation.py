@@ -1,221 +1,228 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from time import time
+
 import numpy as np
-import quaternions as qt
 from parsing import *
 
-GLOBAL_PRECISION = -1
+from numba import jit
+import numba
 
-FRAME_GLOBAL = -1
-FRAME_SHOW = -1
+FRAME_SHOW = None
 
-LIGHT_MODE = False
-DO_STEREOGRAPHIC = False
-AUTOMATIC_STEREOGRAPHIC_BASE_POINT = False
+DO_STEREOGRAPHIC = None
+AUTOMATIC_STEREOGRAPHIC_BASE_POINT = None
+
+BASE_POINT_PROJECTION = None
+
+R_DTYPE = None
+C_DTYPE = None
+
+FMT = None
+
+@numba.vectorize([numba.float64(numba.complex128),
+                  numba.float32(numba.complex64)])
+def norm1(x):
+    if np.signbit(x.real):
+        if np.signbit(x.imag):
+            return - x.real - x.imag
+        return - x.real + x.imag
+    if np.signbit(x.imag):
+        return x.real - x.imag
+    return x.real + x.imag
+
+@jit(nopython=True, cache=True)
+def siegel_projection(stack, set_points_enrich):
+
+    for i in range(len(set_points_enrich)):
+
+        x_point = set_points_enrich[i]
+        x_point /= x_point[2]
+
+        stack[i] = np.array([x_point[1].real,
+                             x_point[1].imag,
+                             x_point[0].imag])
+
+    return stack
 
 
-CENTER_POINT = np.array([])
-CENTER_POINT_SHOW = np.array([])
-BASE_POINT_PROJECTION = qt.quaternion(0.,0.,0.,0.)
+def base_point_stereographic_projection(data):
 
+    print('Determining base point for stereographic projection.')
+    Y = np.ones(len(data), dtype = np.dtype(C_DTYPE))
+    set_points = np.array([p[:2] for p in data])
+    X = np.linalg.lstsq(set_points,Y,rcond=-1)
+
+    vect = X[0]
+    vect = - vect / np.sqrt(np.abs(vect[0]**2) + np.abs(vect[1]**2))
+    print(vect)
+    return np.array(vect,dtype=np.dtype(C_DTYPE))
 
 """
-PROJECTIONS
-
-c |y|^2 + b x + b^* x^* =0 , c < 0
-c |y|^2 + 2Re(bx) = 0
--|y|^2 + 2 Re(b/|c| x) = 0
-
-# Siegel
-    -|y|^2 + Re(x) = 0
-    x <- x * |c|/2b
-
-# stéréographique
-
+projection stéréographique
     projection depuis (1,0,0,0) :
     a^2 + b^2 + c^2 + d^2 = 1
     |->
     b / (1-a) , c / (1-a) , d / (1-a)
-
-    si
-    -|y|^2 + 2Re(x z^*) = 0
-
-    x = (-u+v) / sqrt(2) ; z = (u+v) / sqrt(2)
-    xz^* = 1/2 ( (-u+v) (u+v)^* ) = 1/2 (-u u^* + vv^*)
-    2 Re(xz^*) = -u u^* + v v^*
-    -> -|y|^2 - |u|^2 + |v|^2
-    -> Re(u)^2 + Im(u)^2 + Re(y)^2 + Im(y)^2 = 1 , v = 1
-
-    u = (-x+z) / sqrt(2) , v = (x+z) / sqrt(2)
-
-
 """
 
-def siegel_projection(point, hermitian_equation):
+@jit(nopython=True, cache=True)
+def quaternion_div(a,b):
 
-    c = hermitian_equation[1].real
-    b = hermitian_equation[5]
+    mat_a = np.array([[a[0]             , -a[1]],
+                      [a[1].conjugate() , a[0].conjugate()]
+                      ],dtype=np.dtype(C_DTYPE))
+    mat_b = np.array([[b[0]             , -b[1]],
+                      [b[1].conjugate() , b[0].conjugate()]
+                      ],dtype=np.dtype(C_DTYPE))
 
-    point[0] = point[0] * np.abs(c) * ((2.*b)**(-1))
+    mat_res = np.dot(mat_a,np.linalg.inv(mat_b))
 
-    projected_point = np.array([point[1].real, point[1].imag,
-                                point[0].imag])
-    return projected_point
-
-
-def circular_coordinate(point, hermitian_equation):
-
-    c = hermitian_equation[1].real
-    b = hermitian_equation[5]
-
-    point[0] = point[0] * np.abs(c) / b
-
-    u = (- point[0] + 1) / np.sqrt(np.longdouble(2))
-    v = (point[0] + 1) / np.sqrt(np.longdouble(2))
-
-    q_point = np.array([u,point[1]])
-    q_point = q_point  / v
-    return q_point
+    return np.array([mat_res[0][0],-mat_res[0][1]],dtype=np.dtype(C_DTYPE))
 
 
-def base_point_stereographic_projection(hermitian_equation, set_points):
+@jit(nopython=True, cache=True)
+def stereographic_projection(stack, set_points_enrich, base_point):
 
-    data = np.array([circular_coordinate(point, hermitian_equation)
-                     for point in set_points], dtype=np.dtype(np.cdouble))
+    for i in range(len(set_points_enrich)):
 
-    Y = np.ones(len(set_points), dtype = np.dtype(np.cdouble))
-    X = np.linalg.lstsq(data,Y,rcond=-1)
+        x_point = set_points_enrich[i]
+        x_point = x_point / x_point[2]
+        x_point = np.array([x_point[0],x_point[1]],dtype=np.dtype(C_DTYPE))
+        x_point = quaternion_div(x_point,base_point)
 
-    vect = X[0]
-    vect = - vect / np.sqrt(np.abs(vect[0]**2) + np.abs(vect[1]**2))
+        c = 1.- x_point[0].real
+        if c == 0.: c = 1e-15
 
-    quat = qt.quaternion(vect[0].real, vect[0].imag, vect[1].real, vect[1].imag)
+        stack[i] = np.array([x_point[0].imag / c,
+                             x_point[1].real / c ,
+                             x_point[1].imag / c])
 
-    return quat
+    return stack
 
+@jit(nopython=True, cache=True)
+def frame_stack(stack):
 
-def stereographic_projection(point, hermitian_equation, base_point):
+    j = 0
 
-    q_point = circular_coordinate(point, hermitian_equation)
+    for i in range(len(stack)):
 
-    x_point = qt.quaternion(q_point[0].real, q_point[0].imag,
-                            q_point[1].real, q_point[1].imag)
+        point = stack[i]
 
-    x_point = x_point / base_point
+        if (norm1(point) < FRAME_SHOW).all():
 
-    c = 1.- x_point.w
-    if c == 0.: c = 1e-15
+            stack[j] = point
+            j += 1
 
-    result = np.array([x_point.x / c, x_point.y / c , x_point.z / c])
+    return (stack,j)
 
-    return result
+def get_basis_transformation(set_points):
 
-
-def projection(point, avoided_coordinate):
-    """La projection consiste à oublier la coordonnée fournie par
-    avoided_coordinate.
-    """
-    if avoided_coordinate == 4:
-        avoided_coordinate = 0
-
-    real_point = np.array([point[0].real, point[0].imag,
-                           point[1].real, point[1].imag])
-    return np.array([real_point[i] for i in range(4) if i != avoided_coordinate])
-
-
-def select_points_for_show(path_points_filtered,
-                           path_points_enriched_filtered,
-                           path_points_for_show):
-    """Organise la selection des points pour 'show'.
-
-    Les points obtenus dans path_points_filtered sont récupérés.
-    On calcule la coordonnée à éviter.
-
-    Selon LIGHT_MODE on décide de la précision avec la quelle inscrire les
-    points donnés par la projection.
-
-    À noter que si aucune coordonnée à éviter n'est donnée (i.e. vaut une
-    valeur bidon) alors la projection oublie la toute dernière coordonnée, à
-    savoir la partie imaginaire de y.
-    """
-
-
-    print('\n Determining an hermitian equation for projection.')
-
-    set_points = []
-    with open(path_points_filtered) as source:
-        for line in source:
-            set_points.append(in_parse_complex(line))
     hermitian_equation = solve_hermitian_equation_parameters(set_points)
 
-    avoided_coordinate = determine_avoided_coordinate(hermitian_equation)
+    basis_transformation = determine_basis_transformation(hermitian_equation)
 
-    if avoided_coordinate == 4:
-        print('No good equation found.')
+    return basis_transformation
 
-    if (avoided_coordinate == 0
-        and AUTOMATIC_STEREOGRAPHIC_BASE_POINT
-        and DO_STEREOGRAPHIC):
+def points_to_show_with_basis_transformation(set_points_enrich,
+                                             path_points_for_show,
+                                             basis_transformation):
 
-        print('Determining a base point for stereographic projection.')
+    t = time()
 
-        set_points_enrich = []
-        with open(path_points_enriched_filtered) as source:
-            for line in source:
-                set_points_enrich.append(in_parse_complex(line))
-        base_point = base_point_stereographic_projection(
-                                                  hermitian_equation,
-                                                  set_points_enrich)
-        print(base_point)
+    if not DO_STEREOGRAPHIC:
 
-    file = open(path_points_for_show,'a')
+        siegel = np.array([
+        [ -1/np.sqrt(R_DTYPE(2)) , 0., 1/np.sqrt(R_DTYPE(2)) ],
+        [ 0.                           , 1., 0.],
+        [ 1/np.sqrt(R_DTYPE(2))  , 0., 1/np.sqrt(R_DTYPE(2)) ]
+        ],dtype=np.dtype(C_DTYPE))
 
-    with open(path_points_enriched_filtered) as source:
+        basis_transformation = np.dot(siegel, basis_transformation)
 
-        for line in source:
+    set_points_enrich = np.dot(basis_transformation,
+                               set_points_enrich.transpose()).transpose()
 
-            point = in_parse_complex(line)
-            projected_point = np.array([])
+    stack = np.empty([len(set_points_enrich),3], dtype=np.dtype(R_DTYPE))
+    print('Projecting.')
 
-            if avoided_coordinate == 0:
+    if DO_STEREOGRAPHIC:
+        base_point = (BASE_POINT_PROJECTION
+                  if not AUTOMATIC_STEREOGRAPHIC_BASE_POINT
+                  else base_point_stereographic_projection(set_points_enrich))
 
-                if DO_STEREOGRAPHIC:
-                    if AUTOMATIC_STEREOGRAPHIC_BASE_POINT:
-                        projected_point = stereographic_projection(point,
-                                                             hermitian_equation,
-                                                             base_point)
-                    else:
-                        projected_point = stereographic_projection(point,
-                                                          hermitian_equation,
-                                                          BASE_POINT_PROJECTION)
+        stack = stereographic_projection(stack, set_points_enrich, base_point)
 
-                else:
-                    projected_point = siegel_projection(point,
-                                                        hermitian_equation)
+    else:
 
-            else:
+        stack = siegel_projection(stack, set_points_enrich)
 
-                projected_point = projection(point, avoided_coordinate)
+    stack,j = frame_stack(stack)
 
-            if ((projected_point != -1).all() and
-               (np.abs(projected_point-CENTER_POINT_SHOW) < FRAME_SHOW).all()):
-
-                stri = ''
-                if LIGHT_MODE:
-                    stri = (convert_numpy_to_string_light(projected_point[0])
-                            + ' '
-                          + convert_numpy_to_string_light(projected_point[1])
-                            + ' '
-                          + convert_numpy_to_string_light(projected_point[2]))
-                else:
-                    stri = (convert_numpy_to_string(projected_point[0]) + ' '
-                          + convert_numpy_to_string(projected_point[1]) + ' '
-                          + convert_numpy_to_string(projected_point[2]))
-
-                file.write(stri+'\n')
-
+    file = open(path_points_for_show, 'a')
+    np.savetxt(file, stack[:j], fmt=FMT)
     file.close()
+    print(time()-t)
+
+    return 0
+
+
+def acquire_data(path_points):
+
+    print('Acquire data.')
+    t = time()
+    set_points = np.loadtxt(path_points,
+                                       dtype=np.dtype(R_DTYPE))
+
+
+    set = np.empty([len(set_points),3],dtype=np.dtype(C_DTYPE))
+    set_points = transform_input(set_points, set)
+    print(time()-t)
+    print('Acquired ' + str(len(set_points)) + ' points.')
+
+    return set_points
+
+def select_points_for_show_with_basis(path_points,
+                                      path_points_for_show,
+                                      basis_transformation):
+
+    t = time()
+    print('Acquire data.')
+    set_points = np.loadtxt(path_points,
+                                   dtype=np.dtype(R_DTYPE))
+    print(time()-t)
+
+    set = np.empty([len(set_points),3],dtype=np.dtype(C_DTYPE))
+    set_points = transform_input(set_points, set)
+    print('Has ' + str(len(set_points)) + ' points to show.')
+
+    points_to_show_with_basis_transformation(set_points,
+                                             path_points_for_show,
+                                             basis_transformation)
+
+    return 0
+
+
+def select_points_for_show(path_points_enriched,
+                           path_points_for_show):
+
+    t = time()
+    print('Acquire data.')
+    set_points_enrich = np.loadtxt(path_points_enriched,
+                                   dtype=np.dtype(R_DTYPE))
+    print(time()-t)
+
+    set = np.empty([len(set_points_enrich),3],dtype=np.dtype(C_DTYPE))
+    set_points_enrich = transform_input(set_points_enrich, set)
+    print('Has ' + str(len(set_points_enrich)) + ' points to show.')
+
+    basis_transformation = get_basis_transformation(set_points_enrich)
+
+    points_to_show_with_basis_transformation(set_points_enrich,
+                                             path_points_for_show,
+                                             basis_transformation)
+
     return 0
 
 """ Par une méthode des moindres carrés, on calcule une forme hermitienne.
@@ -242,100 +249,92 @@ L'équation obtenue est affichée dans la console. On renvoie enfin une
 coordonnée (réelle) liée par l'équation si c'est possible.
 """
 
-def determine_avoided_coordinate(hermitian_equation):
+def determine_basis_transformation(hermitian_equation):
 
-    stri = ((str(hermitian_equation[0]) + ' |x|^2' +
-            '\n' if np.abs(hermitian_equation[0])>1e-5 else '')
-           +(str(hermitian_equation[1]) + ' |y|^2' +
-            '\n' if np.abs(hermitian_equation[1])>1e-5 else '')
-           +(str(hermitian_equation[2]) + ' |z|^2' +
-            '\n' if np.abs(hermitian_equation[2])>1e-5 else '')
-           +(str(hermitian_equation[3]) + ' x y^*' +
-            '\n' if np.abs(hermitian_equation[3])>1e-5 else '')
-           +(str(hermitian_equation[4]) + ' y x^*' +
-            '\n' if np.abs(hermitian_equation[4])>1e-5 else '')
-           +(str(hermitian_equation[5]) + ' x z^*' +
-            '\n' if np.abs(hermitian_equation[5])>1e-5 else '')
-           +(str(hermitian_equation[6]) + ' z x^*' +
-            '\n' if np.abs(hermitian_equation[6])>1e-5 else '')
-           +(str(hermitian_equation[7]) + ' y z^*' +
-            '\n' if np.abs(hermitian_equation[7])>1e-5 else '')
-           +(str(hermitian_equation[8]) + ' z y^*'
-             if abs(hermitian_equation[8])>1e-5 else ''))
+    h_eq = hermitian_equation
 
-    print(stri)
+    H = np.array([
+    [h_eq[0] , h_eq[3] , h_eq[5]],
+    [h_eq[4] , h_eq[1] , h_eq[7]],
+    [h_eq[6] , h_eq[8] , h_eq[2]]
+    ],dtype=np.dtype(C_DTYPE))
 
-    non_vanishing_parameters = [i for i in range(9)
-                                if np.abs(hermitian_equation[i])>1e-5]
+    Q = np.linalg.eig(H)[1]
+    # normalisation supplémentaire de Q
+    Q = np.dot(Q,
+               np.diag([
+               np.abs(Q[2][0]) / Q[2][0],
+               np.abs(Q[2][1]) / Q[2][1],
+               np.abs(Q[2][2]) / Q[2][2]
+               ]))
 
-    if 5 in non_vanishing_parameters and 6 in non_vanishing_parameters:
+    N = np.dot(Q.conjugate().transpose(), np.dot(H,Q))
+    D = np.array([N[0][0].real, N[1][1].real, N[2][2].real],
+                  dtype=np.dtype(R_DTYPE))
+    print(D)
 
-        if np.abs(hermitian_equation[5] - hermitian_equation[6]) < 1e-8:
-            # s5 xz^* + s5 zx^* = s5 (xz^* + zx^*) = s5 2 Re(xz^*)
-            # z=1 -> x.real determined
-            return 0
 
-        if np.abs(hermitian_equation[5] + hermitian_equation[6]) < 1e-8:
-            # s5 xz^* - s5 zx^* = s5 (xz^* - zx^*) = s5 2 Im(xz^*)
-            # z=1 -> x.imag determined
-            return 1
+    delta = np.dot(np.sqrt(np.abs(np.diag([D[2]/D[0],D[2]/D[1],1.])))
+                  ,np.diag(np.sign(D)))
 
-        if np.abs(hermitian_equation[5] - hermitian_equation[6].conj()) < 1e-8:
-            # s5 xz^* + s5^* zx^* =   (s5 xz^*) + (s5 xz^*)^* = 2Re(s5 xz^*)
-            # z=1 -> (s5 x).real determined
-            # (s5 x).real = s5.real * x.real - s5.imag * x.imag
-            # -> only depends on x.real or x.imag
-            return 0
+    arrange = np.identity(3,dtype=np.dtype(C_DTYPE))
 
-        if np.abs(hermitian_equation[5] + hermitian_equation[6].conj()) < 1e-8:
-            # s5 xz^* - s5^* zx^* =   (s5 xz^*) - (s5 xz^*)^* = 2Im(s5 xz^*)
-            # z=1 -> (s5 x).imag determined
-            return 0
+    if np.sign(D[0]) != np.sign(D[1]):
+        if np.sign(D[0]) == np.sign(D[2]):
+            arrange = np.array([[1.,0.,0.],[0.,0.,1.],[0.,1.,0.]]
+                                ,dtype=np.dtype(C_DTYPE))
+        else:
+            arrange = np.array([[0.,0.,1.],[1.,0.,0.],[0.,1.,0.]]
+                                ,dtype=np.dtype(C_DTYPE))
 
-    if 7 in non_vanishing_parameters and 8 in non_vanishing_parameters:
+    normal_form = np.dot(delta, arrange)
 
-        if np.abs(hermitian_equation[7] - hermitian_equation[8]) < 1e-8:
-             return 2
+    transform = np.dot(Q,normal_form)
+    return np.linalg.inv(transform)
 
-        if np.abs(hermitian_equation[7] + hermitian_equation[8]) < 1e-8:
-             return 3
-
-        if np.abs(hermitian_equation[7] - hermitian_equation[8].conj()) < 1e-8:
-             return 2
-
-        if np.abs(hermitian_equation[7] + hermitian_equation[8].conj()) < 1e-8:
-             return 2
-
-    return 4
 
 # |x|^2  |y|^2  |z|^2  xy^*  yx^*  xz^*  zx^*  yz^*  zy^*
+@jit(nopython=True, cache=True)
+def set_for_hermitian_equation(set_points, set):
 
-def from_point_to_vector_for_hermitian_equation(x):
-    return [np.cdouble(x[0]*x[0].conj()) ,
-            np.cdouble(x[1]*x[1].conj()) ,
-            np.cdouble(x[2]*x[2].conj()) ,
-            np.cdouble(x[0]*x[1].conj()) , np.cdouble(x[1]*x[0].conj()) ,
-            np.cdouble(x[0]*x[2].conj()) , np.cdouble(x[2]*x[0].conj()) ,
-            np.cdouble(x[1]*x[2].conj()) , np.cdouble(x[2]*x[1].conj())]
+    for i in range(len(set_points)):
 
+        x = set_points[i]
+        set[i] = np.array([x[0]*x[0].conjugate() ,
+                           x[1]*x[1].conjugate() ,
+                           x[2]*x[2].conjugate() ,
+                           x[0]*x[1].conjugate() , x[1]*x[0].conjugate() ,
+                           x[0]*x[2].conjugate() , x[2]*x[0].conjugate() ,
+                           x[1]*x[2].conjugate() , x[2]*x[1].conjugate()])
+    return set
 
 def solve_hermitian_equation_parameters(set_points):
 
-    y = [set_points[0][i]-set_points[len(set_points)-1][i] for i in range(3)]
+    print('\n Determining an hermitian equation for projection.')
 
-    data = [from_point_to_vector_for_hermitian_equation(x) for x in set_points]
+    set = np.empty([len(set_points),9], dtype=np.dtype(C_DTYPE))
+    set = set_for_hermitian_equation(set_points, set)
 
-    data.append(from_point_to_vector_for_hermitian_equation(y))
+    middle = np.array([set_points[0][i]+set_points[len(set_points)-1][i]
+                      for i in range(3)],dtype=np.dtype(C_DTYPE))
+    y = np.array([[middle[0]*middle[0].conjugate() ,
+                   middle[1]*middle[1].conjugate() ,
+                   middle[2]*middle[2].conjugate() ,
+                   middle[0]*middle[1].conjugate() ,
+                   middle[1]*middle[0].conjugate() ,
+                   middle[0]*middle[2].conjugate() ,
+                   middle[2]*middle[0].conjugate() ,
+                   middle[1]*middle[2].conjugate() ,
+                   middle[2]*middle[1].conjugate()
+                 ]],dtype=np.dtype(C_DTYPE))
 
-    A = np.array(data)
 
-    c = np.cdouble(0.)
-    y_data = [c for x in set_points]
-    y_data.append(np.cdouble(-1.))
-    Y = np.array(y_data)
+    A = np.concatenate([set,y])
+
+    Y = np.concatenate([np.zeros(len(set_points),dtype=np.dtype(C_DTYPE)),
+                        np.array([C_DTYPE(-1.)])])
 
     X = np.linalg.lstsq(A,Y,rcond=-1)
 
-    #print([x if np.abs(x)>1e-5 else np.cdouble(0) for x in X ])
 
     return X[0]

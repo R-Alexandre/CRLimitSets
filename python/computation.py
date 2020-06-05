@@ -4,53 +4,50 @@
 from os import system
 from time import time
 import numpy as np
-import multiprocessing
-import snappy
 
 from parsing import *
 from grouphandler import*
 
-# Precision de PARI (provient de SnapPy)
-snappy.pari.set_real_precision(1000)
-snappy.pari.allocatemem(10**10,10**10)
+import numba
+from numba import jit
+
+LENGTH_WORDS = None
+LENGTH_WORDS_ENRICHMENT = None
+
+EPSILON = None
+ITERATIONS_NUMBER = None
+
+GLOBAL_PRECISION = None
+ACCUMULATED_INVERSE_PRECISION = None
+ENRICH_PRECISION = None
+
+FMT = None
+
+C_DTYPE = np.cdouble
+R_DTYPE = None
 
 
-CERTIFICATION = True
-
-LENGTH_WORDS = -1
-LENGTH_WORDS_ENRICHMENT = -1
-
-NUMBER_PROCESSES =  -1
-
-# Precision et cadre maximal pour le calcul des points
-# numpy.finfo(numpy.longdouble)
-# donne 18 decimales significative
-EPSILON = -1
-ITERATIONS_NUMBER = -1
-
-# pour certification
-GLOBAL_PRECISION = -1
-ACCUMULATED_INVERSE_PRECISION = -1
-ENRICH_PRECISION = -1
-
-FRAME_GLOBAL = -1
+BASE_POINT = np.array([C_DTYPE(-0.1), C_DTYPE(0.1), C_DTYPE(1.)])
 
 
+@numba.vectorize([numba.float64(numba.complex128),
+                  numba.float32(numba.complex64)])
+def abs2(x):
+    return x.real*x.real + x.imag*x.imag
 
-def goldman_trace(matrix):
-    """ Cette fonction permet de vérifier que la matrice est bien loxodromique.
-
-    Goldman a montré dans son livre 'Complex Hyperbolique Geometry' que la
-    trace d'une matrice permet de déterminer si elle est loxodromique ou non.
-    En réalité, ces matrices sont même conjuguées si, et seulement si, elles
-    ont même trace.
-    """
-
-    z = matrix.trace()
-    z2 = np.abs(z)**2
-    return z2**2 - 8.*(z**3).real + 18.*z2 - 27.
+@numba.vectorize([numba.float64(numba.complex128),
+                  numba.float32(numba.complex64)])
+def norm1(x):
+    if x.real > 0. :
+        if x.imag > 0.:
+            return x.real + x.imag
+        return x.real - x.imag
+    if x.imag > 0.:
+        return -x.real + x.imag
+    return -x.real - x.imag
 
 # Calcule l'orbite et cherche convergence
+@jit(nopython=True, cache=True, nogil=True)
 def iterate(matrix):
     """ Cette fonction itère une matrice si elle est bien loxodromique.
 
@@ -60,68 +57,84 @@ def iterate(matrix):
 
     L'itération se fait dans CP^3 et en conservant la carte z=1.
 
-    La certification (si CERTIFICATION = True) consiste à vérifier qu'à
+    La certification consiste à vérifier qu'à
     chaque étape, le point ne sort pas d'une boule de rayon GLOBAL_PRECISION
     et que l'étape d'inversion pour rester dans la carte z=1 ne provoque
     pas un facteur multiplicatif de norme plus grande que
     ACCUMULATED_INVERSE_PRECISION.
     """
 
-    point = np.array([np.clongdouble(-0.1),
-                              np.clongdouble(0.1),
-                              np.clongdouble(1.)])
+    point = BASE_POINT
 
-    if goldman_trace(matrix) < 1e-10:
+    """
+    Goldman a montré dans son livre 'Complex Hyperbolique Geometry' que la
+    trace d'une matrice permet de déterminer si elle est loxodromique ou non.
+    En réalité, ces matrices sont même conjuguées si, et seulement si, elles
+    ont même trace.
+    """
+    z = np.trace(matrix)
+
+    if z.imag*z.imag < EPSILON:
+        m = z.real
+        goldman_trace = (m+1) * (m-3) # normalement (m+1)* ((m-3)**3)
+    else:
+        z2 = abs2(z)
+        goldman_trace = (z2 + 18) * z2 - 8*((z*z*z).real) - 27
+
+    if goldman_trace < 1e-6:
+        #if np.signbit(goldman_trace):
         # verifie que la dynamique est hyperbolique
         return (False,point)
 
     last_point = point
-    accumulated_precision = np.longdouble(1.)
+    accumulated_precision = R_DTYPE(1.)
 
-    for i in range(ITERATIONS_NUMBER):
+    matrix = np.dot(matrix,matrix)
+
+    for j in range(ITERATIONS_NUMBER):
+
+        point = np.dot(matrix, point)
+
+        z_inverse = 1./point[2]
+
+        #if CERTIFICATION:
+
+        if (abs2(point) > GLOBAL_PRECISION).any():
+            return (False,point)
+
+        abs_z_inverse = abs2(z_inverse)
+
+        if abs_z_inverse >= 1.:
+            accumulated_precision *= abs_z_inverse
+
+            if accumulated_precision > ACCUMULATED_INVERSE_PRECISION:
+                return (False,point)
+
+        point = point * z_inverse
+
+        if (norm1(point - last_point) < EPSILON).all():
+
+            return (True, point)
 
         last_point = point
-        point = np.dot(matrix,point)
-
-        if CERTIFICATION and (np.abs(point) > GLOBAL_PRECISION).any():
-            return (False,point)
-
-        z_inverse = point[2]**(-1)
-
-        if np.abs(z_inverse) >= 1:
-            accumulated_precision *= np.abs(z_inverse)
-
-        if (CERTIFICATION
-            and accumulated_precision > ACCUMULATED_INVERSE_PRECISION):
-            return (False,point)
-
-        point = np.dot(point,z_inverse)
-
-        if (np.abs(point - last_point) < EPSILON).all():
-
-            if (np.abs(point) < FRAME_GLOBAL).all(): return (True, point)
-
-            else: return (False, point)
 
     return (False,point)
 
+@jit(nopython=True, cache=True, nogil=True)
+def compute_list(a, list_b, stack):
 
+    j = 0
+    for i in range(len(list_b)):
 
-def worker_compute(args):
-
-    a,b,path_points= args
-
-    word = a[0]+b[0]
-    matrix = np.dot(a[1], b[1])
-
-    if no_relation_contained(word):
+        matrix = np.dot(a, list_b[i])
         point = iterate(matrix)
 
         if point[0]:
-            export_point(point[1], path_points)
-            return 1
+            stack[j] = np.array([point[1][0],point[1][1]],
+                             dtype = np.dtype(C_DTYPE))
+            j += 1
 
-    return 0
+    return (stack,j)
 
 # Gere la mise en place globale du calcul.
 def compute(path_points, solution):
@@ -152,134 +165,146 @@ def compute(path_points, solution):
 
     n = len(lists_words[0])*len(lists_words[1])
 
-    list_b = [(b,solution.from_word_to_matrix(b))
-              for b in lists_words[1]]
-
+    list_b = np.array([solution.from_word_to_matrix(b)
+                       for b in lists_words[0]])
     print('Now running.')
-
-    pool = multiprocessing.Pool(processes=NUMBER_PROCESSES)
 
     produced = 0
     last_percent = 0
 
-    t = time()
+    T = time()
 
-    for a in ((a,solution.from_word_to_matrix(a))
-              for a in lists_words[0]):
+    l = len(list_b)
+    stack_zero = np.empty([l,2], dtype=np.dtype(C_DTYPE))
 
-        for result in pool.imap_unordered(worker_compute,
-                               ((a, b,
-                                 path_points)
-                                for b in list_b)):
-            produced += result
+    file = open(path_points,'a')
 
+    for a in (solution.from_word_to_matrix(a) for a in lists_words[1]):
+
+        stack,j = compute_list(a,list_b, stack_zero)
+        np.savetxt(file,stack[:j], fmt=FMT)
+
+        produced += j
 
         percent = int(produced*10/n)
 
         if last_percent != percent:
-            print('\n Gave ' + str(percent*10) + ' %.')
+            print('\n At ' + str(percent*10) + ' %.')
             system("date \"+Time: %H:%M:%S\"")
             last_percent = percent
 
-    print(time()-t)
+    file.close()
+    print(time() - T)
 
     print('Made ' + str(produced) + ' points.')
     return 0
 
+@jit(nopython=True, cache=True, nogil=True)
+def symmetrize(set_points, symmetry, stack):
 
-def worker_enrichment(args):
+    for i in range(len(set_points)):
 
-    a,b,point,path_points_enriched = args
-    word = a[0]+b[0]
-    matrix = np.dot(a[1],b[1])
+        point = np.dot(symmetry,set_points[i])
+        stack[i] = point / point[2]
 
-    if no_relation_contained(word):
+    return stack
 
-        point = np.dot(matrix,point)
+@jit(nopython=True, cache=True, nogil=True)
+def elementary_symmetries(set_points, symmetries, stack):
 
-        if not CERTIFICATION or (np.abs(point) < GLOBAL_PRECISION).all():
-            z_coordinate = point[2]
+    for t in range(len(symmetries)):
 
-            if (not CERTIFICATION
-                or (np.abs(z_coordinate) < ENRICH_PRECISION
-                and np.abs(z_coordinate)**(-1) < ENRICH_PRECISION)):
+        symmetry = symmetries[t]
 
-                point = np.dot(point,z_coordinate**(-1))
+        for i in range(len(set_points)):
 
-                if (np.abs(point) < FRAME_GLOBAL).all():
-                    export_point(point, path_points_enriched)
-                    return 1
+            point = np.dot(symmetry,set_points[i])
+            point = point / point[2]
+            stack[t*len(set_points) + i] = np.array([point[0],point[1]])
 
-    return 0
+    return stack
+
+
+@jit(nopython=True, cache=True, nogil=True)
+def enrich_point(point, list_a, list_b, stack, l):
+
+    m = 0
+
+    for i in range(len(list_a)):
+
+        point_it = np.dot(list_a[i],point)
+
+        for j in range(l):
+
+            point_it = np.dot(list_b[j],point_it)
+
+            if (abs2(point_it) < GLOBAL_PRECISION).all():
+
+                z_abs2 = abs2(point_it[2])
+
+                if (z_abs2 < ENRICH_PRECISION
+                    and 1./z_abs2 < ENRICH_PRECISION):
+
+                    point_it = point_it / point_it[2]
+
+                    stack[m] = np.array([point_it[0],point_it[1]])
+                    m += 1
+
+    return (stack,m)
 
 # Enrichissement par iteration additionnelle
-def enrichissement(path_points_filtered,path_points_enriched,solution):
+def enrichissement(set_points, path_points_enriched, solution):
     """ Cette fonction gère le second calcul des points, par invariance.
 
-    Bien que semblable à compute(), il faut noter certaines différences liées
-    à la parallélisation.
-
-    Les deux listes ont leur matrices calculées préalablement. D'autre part,
-    les points déjà connus sont lus successivement, puis la première liste est
-    itérée, et la donnée d'une matrice de la première liste et la seconde liste
-    fournit ce qui sera calculé parallèlement.
-
-    Cette solution (lire le fichier une seule fois) permet d'économiser en
-    temps d'I/O qui est décisif car le fichier n'est pas stocké en mémoire
-    vive.
-    D'autre part, il est moins couteux en mémoire de calculer les matrices
-    d'une liste supplémentaire (la première) que de stocker le fichier
-    en mémoire vive.
     """
 
     lists_words = lists_forming_words_length(LENGTH_WORDS_ENRICHMENT)
 
-    list_a = [(a,solution.from_word_to_matrix(a))
-                       for a in lists_words[0]]
-    list_b = [(b,solution.from_word_to_matrix(b))
-                       for b in lists_words[1]]
+    list_a = np.array([solution.from_word_to_matrix(a)
+                       for a in lists_words[0]])
+    list_b = np.array([solution.from_word_to_matrix(b)
+                       for b in lists_words[1]])
 
     print('Made lists for ' +
           str(len(lists_words[0]) * len(lists_words[1]))
           + ' words.')
 
-    pool = multiprocessing.Pool(processes=NUMBER_PROCESSES)
-
-    number_points_filtered = 0
-
-    with open(path_points_filtered) as file:
-        number_points_filtered = len(file.readlines())
-
-    produced = 0
-    last_percent = 0
-
-    n = len(list_a) * len(list_b) * number_points_filtered
 
     print('Starting computation.')
 
-    with open(path_points_filtered) as source:
+    last_percent = 0
 
-        for line in source:
+    l = len(list_a) * len(list_b)
+    stack = np.zeros([l,2], dtype=np.dtype(C_DTYPE))
 
-            point = in_parse_complex(line)
-            export_point(point,path_points_enriched)
+    n = len(list_a) * len(list_b) * len(set_points)
 
-            for a in list_a:
+    T = time()
+    file = open(path_points_enriched,'a')
 
-                for result in pool.imap_unordered(worker_enrichment,
-                                    ((a,b,
-                                      point,
-                                      path_points_enriched)
-                                     for b in list_b)):
+    old_points = np.array([np.array([point[0],point[1]])
+                           for point in set_points])
 
-                    produced += result
+    np.savetxt(file, old_points, fmt=FMT)
 
-            percent = int(produced*10/n)
+    produced = 0
 
-            if last_percent != percent:
-                print('\n Enrichment gave ' + str(percent*10) + ' %.')
-                system("date \"+Time: %H:%M:%S\"")
-                last_percent = percent
+    for point in set_points:
 
-    print('Got ' + str(produced) + ' new points.')
+        stack,m = enrich_point(point, list_a, list_b, stack, len(list_b))
+        np.savetxt(file, stack[:m], fmt=FMT)
+
+        produced += m
+        percent = int(produced*10/n)
+
+        if last_percent != percent:
+            print('\n Enrichment at ' + str(percent*10) + ' %.')
+            system("date \"+Time: %H:%M:%S\"")
+            last_percent = percent
+
+    file.close()
+    print(time() - T)
+
+    print('Has now ' + str(produced) + ' points.')
+
     return 0

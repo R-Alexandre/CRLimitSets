@@ -1,42 +1,47 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from multiprocessing import cpu_count
 import numpy as np
-import quaternions as qt
 
 """
 Voir le README pour la description des variables.
 """
 
-CERTIFICATION = True
 DO_GNU_PLOT = True
-LIGHT_MODE =  True
+COMPRESS_AFTER = False
 
-NUMBER_PROCESSES = cpu_count() - 1 or 1
+TRACE_PLOT = False
 
-LENGTH_WORDS = 8
+LENGTH_WORDS = 7
+
+AUTOMATIC_LENGTH_ENRICHMENT = False
 NUMBER_POINTS = 1e5
+LENGTH_WORDS_ENRICHMENT = 1
 
 # Precision et cadre maximal pour le calcul des points
-# numpy.finfo(numpy.longdouble)
-# donne 18 decimales significative
-EPSILON = 1e-16
-ITERATIONS_NUMBER = 250
+# numpy.finfo(numpy.cdouble)
+# donne 15 decimales significatives
+C_DTYPE = np.cdouble
+R_DTYPE = np.double
 
-GLOBAL_PRECISION = 1e6
-ACCUMULATED_INVERSE_PRECISION = 1e4
-ENRICH_PRECISION = 1e3
+EPSILON = 1e-12
+EPSILON_FILTER = 1e-6
+ITERATIONS_NUMBER = 15
 
-FRAME_GLOBAL = 1e4
+APPLY_SYMMETRIES = True
+
+GLOBAL_PRECISION = 1e3 ** 2 # optimisation
+ACCUMULATED_INVERSE_PRECISION = 1e2 ** 2 # optimisation
+ENRICH_PRECISION = 1e2 ** 2 # optimisation
 
 FRAME_SHOW = 10
 DO_STEREOGRAPHIC = True
-BASE_POINT_PROJECTION = qt.quaternion(0., 1., 0., 0.)
+BASE_POINT_PROJECTION = np.array([C_DTYPE(-1.j), C_DTYPE(0.)])
 AUTOMATIC_STEREOGRAPHIC_BASE_POINT = False
 
-OUT_NUMBER_DIGITS = 15
-OUT_NUMBER_DIGITS_LIGHT = 7
+OUT_NUMBER_DIGITS = 14
+OUT_NUMBER_DIGITS_LIGHT = 6
+FMT = ('%.'+str(OUT_NUMBER_DIGITS)+'f ')*4
 
-CENTER_POINT = np.array([0.,0.,0.,0.],dtype=np.dtype(np.clongdouble))
-CENTER_POINT_SHOW = np.array([0.,0.,0.],dtype=np.dtype(np.clongdouble))
+FMT_SHOW = ('%.'+str(OUT_NUMBER_DIGITS)+'f ')*3
+FMT_SHOW_LIGHT = ('%.'+str(OUT_NUMBER_DIGITS_LIGHT)+'f ')*3

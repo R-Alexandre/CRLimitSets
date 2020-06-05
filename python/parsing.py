@@ -3,59 +3,42 @@
 
 import numpy as np
 
+from numba import jit
+import numba
 
-OUT_NUMBER_DIGITS = -1
-OUT_NUMBER_DIGITS_LIGHT = -1
+C_DTYPE = None
+EPSILON_FILTER = None
 
 
-# Parsing
+@numba.vectorize([numba.float64(numba.float64),
+                  numba.float32(numba.float32)])
+def norm1(x):
+    if x < 0.:
+        return - x
+    return x
 
-def convert_numpy_to_string(x):
 
-    return np.format_float_positional(x, unique=False,
-                                      precision=OUT_NUMBER_DIGITS)
+@jit(nopython=True, cache=True, nogil=True)
+def transform_input(set_points, set):
 
-def convert_numpy_to_string_light(x):
+    point = set_points[0]
+    set[0] = np.array([point[0] + point[1]*1.j,
+                       point[2] + point[3]*1.j,
+                      C_DTYPE(1.)])
+    j = 1
 
-    return np.format_float_positional(x, unique=False,
-                                      precision=OUT_NUMBER_DIGITS_LIGHT)
+    for i in range(1,len(set_points)):
 
-def out_parse_complex(point):
+        n_point = set_points[i]
 
-    return (convert_numpy_to_string(point[0].real) + ' '
-           + convert_numpy_to_string(point[0].imag) + ' '
-           + convert_numpy_to_string(point[1].real) + ' '
-           + convert_numpy_to_string(point[1].imag))
+        if (norm1(point-n_point) > EPSILON_FILTER).any():
 
-def out_parse_real(point):
+            point = n_point
 
-    return (convert_numpy_to_string(point[0]) + ' '
-           + convert_numpy_to_string(point[1]) + ' '
-           + convert_numpy_to_string(point[2]) + ' '
-           + convert_numpy_to_string(point[3]))
+            set[j] = np.array([point[0] + point[1]*1.j,
+                               point[2] + point[3]*1.j,
+                              C_DTYPE(1.)])
 
-def out_parse_real_light(point):
+            j += 1
 
-    return (convert_numpy_to_string_light(point[0]) + ' '
-           + convert_numpy_to_string_light(point[1]) + ' '
-           + convert_numpy_to_string_light(point[2]) + ' '
-           + convert_numpy_to_string_light(point[3])[:OUT_NUMBER_DIGITS_LIGHT])
-
-def in_parse_real(line):
-
-    return np.array([np.longdouble(line.rstrip('\n').split(' ')[i])
-                     for i in range(4)])
-
-def in_parse_complex(line):
-
-    p_real = in_parse_real(line)
-    return np.array([np.clongdouble(p_real[0]+p_real[1]*1.j),
-                     np.clongdouble(p_real[2]+p_real[3]*1.j),
-                     np.clongdouble(1.)])
-
-def export_point(point, path):
-
-    file = open(path,'a')
-    file.write(out_parse_complex(point)+'\n')
-    file.close()
-    return 0
+    return set[:j]
