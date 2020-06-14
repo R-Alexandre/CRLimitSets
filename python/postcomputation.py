@@ -9,7 +9,12 @@ from parsing import *
 from numba import jit
 import numba
 
+DEBUG = True
+
 FRAME_SHOW = None
+
+ALREADY_PU_2_1 = None
+ALREADY_SIEGEL = None
 
 DO_STEREOGRAPHIC = None
 AUTOMATIC_STEREOGRAPHIC_BASE_POINT = None
@@ -129,13 +134,20 @@ def points_to_show_with_basis_transformation(set_points_enrich,
                                              path_points_for_show,
                                              basis_transformation):
 
+    # for debug: it verifies that the basis transformation is OK
+    if DEBUG:
+        set_points = np.dot(basis_transformation,
+                               set_points_enrich.transpose()).transpose()
+        print('PU(2,1) error measurement is: ' + str(is_PU_2_1(set_points)))
+    #
+
     t = time()
 
     if not DO_STEREOGRAPHIC:
 
         siegel = np.array([
         [ -1/np.sqrt(R_DTYPE(2)) , 0., 1/np.sqrt(R_DTYPE(2)) ],
-        [ 0.                           , 1., 0.],
+        [ 0.                     , 1., 0.],
         [ 1/np.sqrt(R_DTYPE(2))  , 0., 1/np.sqrt(R_DTYPE(2)) ]
         ],dtype=np.dtype(C_DTYPE))
 
@@ -253,59 +265,130 @@ def determine_basis_transformation(hermitian_equation):
 
     h_eq = hermitian_equation
 
-    H = np.array([
-    [h_eq[0] , h_eq[3] , h_eq[5]],
-    [h_eq[4] , h_eq[1] , h_eq[7]],
-    [h_eq[6] , h_eq[8] , h_eq[2]]
-    ],dtype=np.dtype(C_DTYPE))
+    if ALREADY_PU_2_1:
+        # already in the form  a|x|^2 + b|y|^2 - c|z|^2 = 0 with a,b,c
 
-    Q = np.linalg.eig(H)[1]
-    # normalisation supplémentaire de Q
-    Q = np.dot(Q,
-               np.diag([
-               np.abs(Q[2][0]) / Q[2][0],
-               np.abs(Q[2][1]) / Q[2][1],
-               np.abs(Q[2][2]) / Q[2][2]
-               ]))
+        a = h_eq[0].real
+        b = h_eq[1].real
+        c = h_eq[2].real
 
-    N = np.dot(Q.conjugate().transpose(), np.dot(H,Q))
-    D = np.array([N[0][0].real, N[1][1].real, N[2][2].real],
-                  dtype=np.dtype(R_DTYPE))
-    print(D)
+        transform = np.diag(np.sqrt(np.abs([a/c, b/c, R_DTYPE(1)])))
 
+        if np.sign(a) != np.sign(b):
+            if np.sign(b) == np.sign(c):
+                arrange = np.array([[0.,1.,0.],
+                                    [0.,0.,1.],
+                                    [1.,0.,0.]]
+                                    ,dtype=np.dtype(C_DTYPE))
+                transform = np.dot(arrange,transform)
+            else:
+                arrange = np.array([[0.,0.,1.],
+                                    [1.,0.,0.],
+                                    [0.,1.,0.]]
+                                    ,dtype=np.dtype(C_DTYPE))
+                transform = np.dot(arrange,transform)
 
-    delta = np.dot(np.sqrt(np.abs(np.diag([D[2]/D[0],D[2]/D[1],1.])))
-                  ,np.diag(np.sign(D)))
+        return transform
 
-    arrange = np.identity(3,dtype=np.dtype(C_DTYPE))
+    elif ALREADY_SIEGEL:
+        # already in the form  a|y|^2 + bxz^* + b^*zx^* = 0 with a,b
 
-    if np.sign(D[0]) != np.sign(D[1]):
-        if np.sign(D[0]) == np.sign(D[2]):
-            arrange = np.array([[1.,0.,0.],[0.,0.,1.],[0.,1.,0.]]
-                                ,dtype=np.dtype(C_DTYPE))
-        else:
-            arrange = np.array([[0.,0.,1.],[1.,0.,0.],[0.,1.,0.]]
-                                ,dtype=np.dtype(C_DTYPE))
+        a = h_eq[1].real
+        b = h_eq[6]
 
-    normal_form = np.dot(delta, arrange)
+        transform = np.diag(np.sqrt(np.abs([b/a, R_DTYPE(1) ,R_DTYPE(1)])))
 
-    transform = np.dot(Q,normal_form)
-    return np.linalg.inv(transform)
+        siegel = np.array([
+        [ -1/np.sqrt(R_DTYPE(2)) , 0., 1/np.sqrt(R_DTYPE(2)) ],
+        [ 0.                     , 1., 0.],
+        [ 1/np.sqrt(R_DTYPE(2))  , 0., 1/np.sqrt(R_DTYPE(2)) ]
+        ],dtype=np.dtype(C_DTYPE))
 
+        return np.dot(siegel,transform)
 
-# |x|^2  |y|^2  |z|^2  xy^*  yx^*  xz^*  zx^*  yz^*  zy^*
+    else: # not ALREADY_PU_2_1 or ALREADY_SIEGEL
+
+        # on calcule une base de vecteurs propres de H : Q
+        # Q^t H Q diagonal
+        # M normalise en (1,1,-1)
+
+        # M^T H M = J
+        # H = M^{-1}^T J M^{-1}
+
+        # A^T H A = H
+        # (M^{-1} A M) = B
+        # B^T J B = J ?
+        # M^T A^T (M^{—1}^T J M^{-1}) A M = M^T (A^T H A) M = M^T H M = J
+
+        # X^T H X = 0
+        # Y^T J Y = 0 ?
+        # X^T M^{-1}^T J M^{-1} X = X^T H X
+        # Y = M^{—1} X
+
+        H = np.array([
+        [h_eq[0] , h_eq[3] , h_eq[5]],
+        [h_eq[4] , h_eq[1] , h_eq[7]],
+        [h_eq[6] , h_eq[8] , h_eq[2]]
+        ],dtype=np.dtype(C_DTYPE))
+
+        Q = np.linalg.eigh(H)[1]
+
+        N = np.dot(Q.conjugate().transpose(), np.dot(H,Q))
+
+        D = np.array([N[0][0].real, N[1][1].real, N[2][2].real],
+                      dtype=np.dtype(R_DTYPE))
+
+        print('Signature: ' + str(D))
+
+        delta = np.diag(np.sqrt(np.abs([1./D[0],
+                                        1./D[1],
+                                        1./D[2]])))
+
+        delta_inv = np.diag(np.sqrt(np.abs([D[0],
+                                            D[1],
+                                            D[2]])))
+
+        arrange = np.identity(3,dtype=np.dtype(C_DTYPE))
+
+        M = np.dot(Q,delta)
+        J = np.dot(M.conjugate().transpose(),np.dot(H,M))
+
+        if np.sign(J[0][0].real) != np.sign(J[1][1].real):
+            if np.sign(J[0][0].real) == np.sign(J[2][2].real):
+                # (1,-1,1)
+                # (x,y,z) -> (z,x,y)
+                arrange = np.array([[0.,1.,0.],
+                                    [0.,0.,1.],
+                                    [1.,0.,0.]]
+                                    ,dtype=np.dtype(C_DTYPE))
+            else:
+                # (-1, 1, 1)
+                # (x,y,z) -> (y,z,x)
+                arrange = np.array([[0.,0.,1.],
+                                    [1.,0.,0.],
+                                    [0.,1.,0.]]
+                                    ,dtype=np.dtype(C_DTYPE))
+        M = np.dot(M,arrange)
+
+        M_inv = np.dot(np.dot(arrange.transpose(),
+                              delta_inv),
+                              Q.conjugate().transpose())
+
+        return M_inv
+
+# |x|^2  |y|^2  |z|^2  x^*y  y^*x  x^*z  z^*x  y^*z  z^*y
 @jit(nopython=True, cache=True)
 def set_for_hermitian_equation(set_points, set):
 
     for i in range(len(set_points)):
 
         x = set_points[i]
-        set[i] = np.array([x[0]*x[0].conjugate() ,
-                           x[1]*x[1].conjugate() ,
-                           x[2]*x[2].conjugate() ,
-                           x[0]*x[1].conjugate() , x[1]*x[0].conjugate() ,
-                           x[0]*x[2].conjugate() , x[2]*x[0].conjugate() ,
-                           x[1]*x[2].conjugate() , x[2]*x[1].conjugate()])
+        set[i] = np.array([x[0].conjugate()*x[0] ,
+                           x[1].conjugate()*x[1] ,
+                           x[2].conjugate()*x[2] ,
+                           x[0].conjugate()*x[1] , x[1].conjugate()*x[0] ,
+                           x[0].conjugate()*x[2] , x[2].conjugate()*x[0] ,
+                           x[1].conjugate()*x[2] , x[2].conjugate()*x[1]])
     return set
 
 def solve_hermitian_equation_parameters(set_points):
@@ -315,19 +398,18 @@ def solve_hermitian_equation_parameters(set_points):
     set = np.empty([len(set_points),9], dtype=np.dtype(C_DTYPE))
     set = set_for_hermitian_equation(set_points, set)
 
-    middle = np.array([set_points[0][i]+set_points[len(set_points)-1][i]
-                      for i in range(3)],dtype=np.dtype(C_DTYPE))
-    y = np.array([[middle[0]*middle[0].conjugate() ,
-                   middle[1]*middle[1].conjugate() ,
-                   middle[2]*middle[2].conjugate() ,
-                   middle[0]*middle[1].conjugate() ,
-                   middle[1]*middle[0].conjugate() ,
-                   middle[0]*middle[2].conjugate() ,
-                   middle[2]*middle[0].conjugate() ,
-                   middle[1]*middle[2].conjugate() ,
-                   middle[2]*middle[1].conjugate()
-                 ]],dtype=np.dtype(C_DTYPE))
+    middle = np.average(set_points,axis=0)
 
+    y = np.array([[middle[0].conjugate()*middle[0] ,
+                   middle[1].conjugate()*middle[1] ,
+                   middle[2].conjugate()*middle[2] ,
+                   middle[0].conjugate()*middle[1] ,
+                   middle[1].conjugate()*middle[0] ,
+                   middle[0].conjugate()*middle[2] ,
+                   middle[2].conjugate()*middle[0] ,
+                   middle[1].conjugate()*middle[2] ,
+                   middle[2].conjugate()*middle[1]
+                 ]],dtype=np.dtype(C_DTYPE))
 
     A = np.concatenate([set,y])
 
@@ -336,5 +418,21 @@ def solve_hermitian_equation_parameters(set_points):
 
     X = np.linalg.lstsq(A,Y,rcond=-1)
 
+    # for debug
+    if DEBUG:
+        print(X[0])
 
     return X[0]
+
+@jit(nopython=True, cache=True)
+def is_PU_2_1(set_points):
+
+    max = R_DTYPE(0.)
+    for i in range(len(set_points)):
+        point = set_points[i]
+        norm = np.abs(point[0])**2 + np.abs(point[1])**2 - np.abs(point[2])**2
+        norm = np.abs(norm)
+        if norm > max:
+            max = norm
+
+    return max

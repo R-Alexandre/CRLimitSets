@@ -7,39 +7,42 @@ import numpy as np
 Voir le README pour la description des variables.
 """
 
+C_DTYPE = np.cdouble
+R_DTYPE = np.double
+
 DO_GNU_PLOT = True
 COMPRESS_AFTER = False
-
 TRACE_PLOT = False
 
-LENGTH_WORDS = 7
+APPLY_SYMMETRIES = True
+
+LENGTH_WORDS = 6
 
 AUTOMATIC_LENGTH_ENRICHMENT = False
 NUMBER_POINTS = 1e5
-LENGTH_WORDS_ENRICHMENT = 1
+LENGTH_WORDS_ENRICHMENT = 2
+
+ALREADY_PU_2_1 = True # eight_knot.py & triangles.py
+ALREADY_SIEGEL = False # unipotent.py
+
+DO_STEREOGRAPHIC = True
+BASE_POINT_PROJECTION = np.array([C_DTYPE(0.), C_DTYPE(-1.)])
+AUTOMATIC_STEREOGRAPHIC_BASE_POINT = False
 
 # Precision et cadre maximal pour le calcul des points
 # numpy.finfo(numpy.cdouble)
 # donne 15 decimales significatives
-C_DTYPE = np.cdouble
-R_DTYPE = np.double
-
-EPSILON = 1e-12
+EPSILON = 1e-14
 EPSILON_FILTER = 1e-6
 ITERATIONS_NUMBER = 15
-
-APPLY_SYMMETRIES = True
 
 GLOBAL_PRECISION = 1e3 ** 2 # optimisation
 ACCUMULATED_INVERSE_PRECISION = 1e2 ** 2 # optimisation
 ENRICH_PRECISION = 1e2 ** 2 # optimisation
 
 FRAME_SHOW = 10
-DO_STEREOGRAPHIC = True
-BASE_POINT_PROJECTION = np.array([C_DTYPE(-1.j), C_DTYPE(0.)])
-AUTOMATIC_STEREOGRAPHIC_BASE_POINT = False
 
-OUT_NUMBER_DIGITS = 14
+OUT_NUMBER_DIGITS = 15
 OUT_NUMBER_DIGITS_LIGHT = 6
 FMT = ('%.'+str(OUT_NUMBER_DIGITS)+'f ')*4
 

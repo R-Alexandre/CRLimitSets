@@ -43,6 +43,8 @@ class Interface(object):
         postcomputation.R_DTYPE = R_DTYPE
         postcomputation.C_DTYPE = C_DTYPE
         postcomputation.FMT = FMT_SHOW_LIGHT
+        postcomputation.ALREADY_PU_2_1 = ALREADY_PU_2_1
+        postcomputation.ALREADY_SIEGEL = ALREADY_SIEGEL
 
         parsing.C_DTYPE = C_DTYPE
         parsing.EPSILON_FILTER = EPSILON_FILTER
@@ -95,20 +97,24 @@ class Interface(object):
 
 
         set_points = np.loadtxt(path_points,dtype=np.dtype(R_DTYPE))
-        set = np.empty([len(set_points),3],dtype=np.dtype(C_DTYPE))
-        set_points = parsing.transform_input(set_points, set)
+
+        if do_computation:
+            set = np.empty([len(set_points),3],dtype=np.dtype(C_DTYPE))
+            set_points = parsing.transform_input(set_points, set)
+
         number_points = len(set_points)
         print("Points' initial file has " + str(number_points)
             + ' different points.')
 
-        system('rm '+path_points)
+        if do_computation:
+            system('rm '+path_points)
 
-        old_points = np.array([np.array([point[0],point[1]])
-                               for point in set_points])
+            old_points = np.array([np.array([point[0],point[1]])
+                                   for point in set_points])
 
-        file = open(path_points,'a')
-        np.savetxt(file, old_points, fmt=FMT)
-        file.close()
+            file = open(path_points,'a')
+            np.savetxt(file, old_points, fmt=FMT)
+            file.close()
 
         if APPLY_SYMMETRIES and do_computation:
 
@@ -117,10 +123,12 @@ class Interface(object):
 
             symmetries = solution.elementary_symmetries
 
+
             for symmetry in symmetries:
 
                 stack = np.empty([len(set_points),3] ,dtype=np.dtype(C_DTYPE))
-                stack = computation.symmetrize(set_points, symmetry, stack)
+                stack,m = computation.symmetrize(set_points, symmetry, stack)
+                stack = stack[:m]
 
                 points = np.array([np.array([point[0],point[1]])
                                        for point in stack])
@@ -206,9 +214,10 @@ class Interface(object):
                 symmetries = solution.symmetries
                 stack = np.empty([ len(symmetries) * len(set_points) ,2]
                                  ,dtype=np.dtype(C_DTYPE))
-                stack = computation.elementary_symmetries(set_points,
-                                                          symmetries,
-                                                          stack)
+                stack,m = computation.light_symmetrize(set_points,
+                                                     symmetries,
+                                                     stack)
+                stack = stack[:m]
 
                 file = open(path_points_enriched,'a')
                 np.savetxt(file, stack, fmt=FMT)
@@ -257,6 +266,7 @@ class Interface(object):
 
             else:
                 print('Computing projection.')
+                system("date \"+Time: %H:%M:%S\"")
 
                 path = path_points_enriched
                 if not isfile(path_points_enriched): path = path_points

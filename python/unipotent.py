@@ -31,12 +31,8 @@ print('\n'
       + '=== Manifold chosen: ' + MANIFOLD + ' ===' + '\n'
       + "=" + '\n')
 
-# Chemin vers base de donnee locale
-PATH = subprocess.check_output('pwd')[:-1]
 
-unipotent_solutions.PATH = PATH
-
-path_results = PATH + '/unipotent-results/'
+path_results = 'unipotent-results/'
 
 interf = interface.Interface(path_results)
 

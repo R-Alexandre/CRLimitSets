@@ -8,7 +8,6 @@ import grouphandler
 
 C_DTYPE = np.cdouble
 
-PATH = -1
 
 # Precision de PARI (provient de SnapPy)
 snappy.pari.set_real_precision(1000)
@@ -36,8 +35,7 @@ class UnipotentSolutions(object):
 
 
         ptolemy_solutions = self.manifold.ptolemy_variety(3
-                                     ,'all').retrieve_solutions(data_url=PATH,
-                                                                prefer_rur=True,
+                                     ,'all').retrieve_solutions(prefer_rur=True,
                                                                 numerical=True,
                                                                 verbose=False)
         # data_url=PATH_DATA,

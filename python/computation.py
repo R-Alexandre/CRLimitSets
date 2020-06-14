@@ -202,15 +202,30 @@ def compute(path_points, solution):
 @jit(nopython=True, cache=True, nogil=True)
 def symmetrize(set_points, symmetry, stack):
 
+    m = 0
+
     for i in range(len(set_points)):
 
         point = np.dot(symmetry,set_points[i])
-        stack[i] = point / point[2]
 
-    return stack
+        if (abs2(point) < GLOBAL_PRECISION).all():
+
+            z_abs2 = abs2(point[2])
+
+            if (z_abs2 < ENRICH_PRECISION
+                and 1./z_abs2 < ENRICH_PRECISION):
+
+                point = point / point[2]
+
+                stack[m] = point
+                m += 1
+
+    return (stack,m)
 
 @jit(nopython=True, cache=True, nogil=True)
-def elementary_symmetries(set_points, symmetries, stack):
+def light_symmetrize(set_points, symmetries, stack):
+
+    m = 0
 
     for t in range(len(symmetries)):
 
@@ -219,10 +234,20 @@ def elementary_symmetries(set_points, symmetries, stack):
         for i in range(len(set_points)):
 
             point = np.dot(symmetry,set_points[i])
-            point = point / point[2]
-            stack[t*len(set_points) + i] = np.array([point[0],point[1]])
 
-    return stack
+            if (abs2(point) < GLOBAL_PRECISION).all():
+
+                z_abs2 = abs2(point[2])
+
+                if (z_abs2 < ENRICH_PRECISION
+                    and 1./z_abs2 < ENRICH_PRECISION):
+
+                    point = point / point[2]
+
+                    stack[m] = np.array([point[0],point[1]])
+                    m += 1
+
+    return (stack,m)
 
 
 @jit(nopython=True, cache=True, nogil=True)
