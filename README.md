@@ -1,14 +1,11 @@
 # limitset
 
 Le fonctionnement est le suivant.
-`./limitset m006` calcule les ensembles limites des représentations
+`python python/unipotent.py m006` calcule les ensembles limites des représentations
 (conjuguées à une représentation) dans PU(2,1) du groupe fondamental
 de la variété m006.
-La commande `./limitset m006 2` permet de ne calculer que la deuxième
+La commande `python python/unipotent.py m006 2` permet de ne calculer que la deuxième
 représentation.
-
-Avec `./limitset all` on calcule tous les ensembles limites du census et avec
-`./limitset fractals` on calcule tous les ensembles limites qui donnent une fractale (connue), en évitant de calculer des représentations qui ne diffèrent que d'une action de Galois.
 
 # Requis
 
