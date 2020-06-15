@@ -31,14 +31,14 @@ manifold=$1
 if [[ $manifold = 'all' ]]; then
   for m in ${listmanifolds//,/ }
   do
-    python python/unipotent.py $m
+    python3 python/unipotent.py $m
   done
 fi
 
 if [[ $manifold = 'fractals' ]]; then
   for m in ${listfractales//,/ }
   do
-    python python/unipotent.py $m
+    python3 python/unipotent.py $m
   done
 fi
 
@@ -46,9 +46,9 @@ for m in ${listmanifolds//,/ }
 do
   if [[ $manifold = $m ]]; then
     if [[ $# -eq 2 ]]; then
-      python python/unipotent.py $m $2
+      python3 python/unipotent.py $m $2
     else
-      python python/unipotent.py $m
+      python3 python/unipotent.py $m
     fi
   fi
 done

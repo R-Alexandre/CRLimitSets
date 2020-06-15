@@ -252,7 +252,7 @@ def select_points_for_show(path_points_enriched,
 
         else:
 
-            basis_transformation = postcomputation.get_basis_transformation(set_points_enrich)
+            basis_transformation = get_basis_transformation(set_points_enrich)
 
 
     points_to_show_with_basis_transformation(set_points_enrich,
