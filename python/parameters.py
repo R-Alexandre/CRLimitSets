@@ -16,14 +16,14 @@ TRACE_PLOT = False
 
 APPLY_SYMMETRIES = True
 
-LENGTH_WORDS = 6
+LENGTH_WORDS = 8
 
 AUTOMATIC_LENGTH_ENRICHMENT = False
 NUMBER_POINTS = 1e5
-LENGTH_WORDS_ENRICHMENT = 1
+LENGTH_WORDS_ENRICHMENT = 3
 
-ALREADY_PU_2_1 = False # True for triangles.py
-ALREADY_SIEGEL = False # True for unipotent.py
+ALREADY_PU_2_1 = False # eight_knot.py & triangles.py
+ALREADY_SIEGEL = False 
 
 DO_STEREOGRAPHIC = True
 BASE_POINT_PROJECTION = np.array([C_DTYPE(0.), C_DTYPE(-1.)])

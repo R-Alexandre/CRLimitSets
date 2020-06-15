@@ -229,7 +229,31 @@ def select_points_for_show(path_points_enriched,
     set_points_enrich = transform_input(set_points_enrich, set)
     print('Has ' + str(len(set_points_enrich)) + ' points to show.')
 
-    basis_transformation = get_basis_transformation(set_points_enrich)
+    basis_transformation = np.identity(3,dtype=np.dtype(C_DTYPE))
+
+    if is_PU_2_1(set_points_enrich) < 1e-6:
+
+        print('Already in PU(2,1) nice basis.')
+
+    else:
+        siegel = np.array([
+        [ -1/np.sqrt(R_DTYPE(2)) , 0., 1/np.sqrt(R_DTYPE(2)) ],
+        [ 0.                     , 1., 0.],
+        [ 1/np.sqrt(R_DTYPE(2))  , 0., 1/np.sqrt(R_DTYPE(2)) ]
+        ],dtype=np.dtype(C_DTYPE))
+
+        siegel_set = np.dot(siegel,
+                            set_points_enrich.transpose()).transpose()
+
+        if is_PU_2_1(siegel_set) < 1e-6:
+
+            print('In Siegel basis.')
+            basis_transformation = siegel
+
+        else:
+
+            basis_transformation = postcomputation.get_basis_transformation(set_points_enrich)
+
 
     points_to_show_with_basis_transformation(set_points_enrich,
                                              path_points_for_show,

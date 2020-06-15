@@ -130,16 +130,16 @@ class TriangleSolution(object):
             if np.sign(D[0]) == np.sign(D[2]):
                 # (1,-1,1)
                 # (x,y,z) -> (z,x,y)
-                arrange = np.array([[0.,0.,1.], # en forme transposée
-                                    [1.,0.,0.],
-                                    [0.,1.,0.]]
+                arrange = np.array([[0.,1.,0.],
+                                    [0.,0.,1.],
+                                    [1.,0.,0.]]
                                     ,dtype=np.dtype(C_DTYPE))
             else:
                 # (-1, 1, 1)
                 # (x,y,z) -> (y,z,x)
-                arrange = np.array([[0.,1.,0.], # en forme transposée
-                                    [0.,0.,1.],
-                                    [1.,0.,0.]]
+                arrange = np.array([[0.,0.,1.],
+                                    [1.,0.,0.],
+                                    [0.,1.,0.]]
                                     ,dtype=np.dtype(C_DTYPE))
 
         M = np.dot(Q, np.dot(delta, arrange))
@@ -152,6 +152,19 @@ class TriangleSolution(object):
         i1 = np.dot(M_inv,np.dot(i1,M))
         i2 = np.dot(M_inv,np.dot(i2,M))
         i3 = np.dot(M_inv,np.dot(i3,M))
+
+        m_123 = np.dot(i1,np.dot(i2,i3))
+        trace_123 = np.trace(m_123)
+        print('Trace of 123: ' + str(trace_123))
+        print(' Goldman: '
+              +str(goldman_trace(trace_123)))
+
+        m_2313 = np.dot(i2,np.dot(i3,np.dot(i1,i3)))
+        trace_2313 = np.trace(m_2313)
+        print('Trace of 2313: ' + str(trace_2313))
+        print(' Goldman: '
+              +str(goldman_trace(trace_2313)))
+
 
         # a = 12; b = 23; c = 31
 
@@ -193,3 +206,8 @@ class TriangleSolution(object):
             matrix = np.dot(matrix, self.dict[letter])
 
         return matrix
+
+
+def goldman_trace(z):
+    z2 = z*z.conjugate()
+    return (z2 + 18) * z2 - 8*((z*z*z).real) - 27

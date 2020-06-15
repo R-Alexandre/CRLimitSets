@@ -22,11 +22,18 @@ if len(arg)==4:
     q = int(arg[2])
     r = int(arg[3])
 
+elif len(arg)==5:
+
+    p = int(arg[1])
+    q = int(arg[2])
+    r = int(arg[3])
+    i = int(arg[4])
+
 elif len(arg)==2:
 
     i = int(arg[1])
 
-    #parabolic 
+    #parabolic
     r = i
 
 # parabolic :
@@ -40,11 +47,11 @@ parabolic_cos_theta = (-4 + 16 * (cos_q * cos_r)**2 + 4 * cos_p*cos_p ) / (16 * 
 parabolic = np.arccos(parabolic_cos_theta) / np.pi
 
 
-scale = 0.05
+scale = 0.01
 
 
-#t = np.longdouble((1. - i* scale ) * parabolic + (i*scale))
-t = parabolic
+#t = parabolic
+t = np.longdouble((1. - i* scale ) * parabolic + (i*scale))
 
 
 parameter = (p,q,r,t)

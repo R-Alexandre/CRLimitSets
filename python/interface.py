@@ -90,10 +90,13 @@ class Interface(object):
             computation.compute(path_points, solution)
 
             print('Computing done. Now Sorting.')
-            sort_command(path_points)
+
 
             if TRACE_PLOT:
+                sort_command(path_points)
                 system("cp " + path_points + ' ' + path_points + '-S1')
+            elif do_computation:
+                partial_sort_command(path_points)
 
 
         set_points = np.loadtxt(path_points,dtype=np.dtype(R_DTYPE))
@@ -123,20 +126,22 @@ class Interface(object):
 
             symmetries = solution.elementary_symmetries
 
+            stack = np.empty([len(set_points),3] ,dtype=np.dtype(C_DTYPE))
 
             for symmetry in symmetries:
 
-                stack = np.empty([len(set_points),3] ,dtype=np.dtype(C_DTYPE))
-                stack,m = computation.symmetrize(set_points, symmetry, stack)
-                stack = stack[:m]
+                if len(set_points) < NUMBER_POINTS:
+                    stack = np.empty([len(set_points),3] ,dtype=np.dtype(C_DTYPE))
+                    stack,m = computation.symmetrize(set_points, symmetry, stack)
+                    stack = stack[:m]
 
-                points = np.array([np.array([point[0],point[1]])
+                    points = np.array([np.array([point[0],point[1]])
                                        for point in stack])
-                file = open(path_points,'a')
-                np.savetxt(file, points, fmt=FMT)
-                file.close()
+                    file = open(path_points,'a')
+                    np.savetxt(file, points, fmt=FMT)
+                    file.close()
 
-                set_points = np.concatenate([set_points,stack])
+                    set_points = np.concatenate([set_points,stack])
 
             print(time.time()-t)
             print('Now Sorting.')
@@ -235,7 +240,30 @@ class Interface(object):
 
                 full_set_points = postcomputation.acquire_data(path_points_enriched)
 
-                basis_transformation = postcomputation.get_basis_transformation(full_set_points)
+                basis_transformation = np.identity(3,dtype=np.dtype(C_DTYPE))
+
+                if postcomputation.is_PU_2_1(full_set_points) < 1e-6:
+
+                    print('Already in PU(2,1) nice basis.')
+
+                else:
+                    siegel = np.array([
+                    [ -1/np.sqrt(R_DTYPE(2)) , 0., 1/np.sqrt(R_DTYPE(2)) ],
+                    [ 0.                     , 1., 0.],
+                    [ 1/np.sqrt(R_DTYPE(2))  , 0., 1/np.sqrt(R_DTYPE(2)) ]
+                    ],dtype=np.dtype(C_DTYPE))
+
+                    siegel_set = np.dot(siegel,
+                                        full_set_points.transpose()).transpose()
+
+                    if postcomputation.is_PU_2_1(siegel_set) < 1e-6:
+
+                        print('In Siegel basis.')
+                        basis_transformation = siegel
+
+                    else:
+
+                        basis_transformation = postcomputation.get_basis_transformation(full_set_points)
 
                 show_and_print_with_basis(path_points + '-S1',
                                           path_points + '-T1',
@@ -317,6 +345,10 @@ def length_words_enrichment(number_points):
 
     return int(solution_x-0.5)+1
 
+def partial_sort_command(path):
+    t = time.time()
+    system("sort " + path + " --numeric-sort --field-separator ' ' --output " + path)
+    print(time.time() - t)
 
 def sort_command(path):
     t = time.time()
