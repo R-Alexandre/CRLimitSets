@@ -3,7 +3,6 @@
 
 import numpy as np
 import snappy
-import solution
 import grouphandler
 
 C_DTYPE = np.cdouble
@@ -82,11 +81,10 @@ class UnipotentSolutions(object):
 
 
 
-class UnipotentSolution(solution.Solution):
+class UnipotentSolution(object):
     """Implémentation de Solution pour les représentations unipotentes."""
 
     def __init__(self, solution, fundamental_group):
-        super(UnipotentSolution, self).__init__()
 
         self.solution = solution
         self.fundamental_group = fundamental_group
