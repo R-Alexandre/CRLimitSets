@@ -34,7 +34,7 @@ class UnipotentSolutions(object):
 
 
         ptolemy_solutions = self.manifold.ptolemy_variety(3
-                                     ,'all').retrieve_solutions(#prefer_rur=True,
+                                     ,'all').retrieve_solutions(#prefer_rur=True, # SNAPPY HAS A BUG HERE
                                                                 numerical=True,
                                                                 verbose=False)
         # data_url=PATH_DATA,
