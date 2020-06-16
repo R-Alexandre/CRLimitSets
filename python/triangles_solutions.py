@@ -40,6 +40,9 @@ class TriangleSolution(object):
         grouphandler.enhance_relations()
         grouphandler.enhance_generators()
 
+        jorg = self.verifies_Jorgensen()
+        print('Discrete following Jorgensen conditions? ' + str(jorg))
+
     def is_acceptable(self):
 
         p = self.parameter[0]
@@ -196,6 +199,62 @@ class TriangleSolution(object):
                  'C' : m_C}
 
 
+    def verifies_Jorgensen(self):
+
+        A = self.from_word_to_matrix('bC') # 2313
+        B = self.from_word_to_matrix('cbC') # 31 23 13
+        # generates even-length:  bC (cbC)^{-1} = C -> get b and c -> get a
+
+        if is_in_SU_2_1(A) > 1e5 or is_in_SU_2_1(B) > 1e5:
+            print('Error: not in SU(2,1).')
+            return False
+
+        if goldman_trace(np.trace(A)) < 1e-5:
+            print('Error: A is not loxodromic.')
+            return False
+
+        u,v = fixed_points_of_loxodromic(A)
+
+        l_u = np.dot(A,u)
+        lambda_A = np.abs(l_u[0]/u[0])
+        print('Lambda: ' + str(lambda_A))
+
+        M = np.abs(lambda_A - 1) + np.abs(1/lambda_A - 1)
+        print('M: ' + str(M))
+
+
+        condition_1 = M * np.sqrt(cross_ratio(np.dot(B,u),v,u,np.dot(B,v))) + M
+        condition_1 = 1 - condition_1
+
+        condition_2 = M * np.sqrt(cross_ratio(np.dot(B,u),u,v,np.dot(B,v))) + M
+        condition_2 = 1 - condition_2
+
+        condition_3 = np.sqrt(R_DTYPE(2)) - 1 - M
+        condition_3b = ( (1 - M + np.sqrt(1 - 2*M - M*M)) / (M*M)
+                        - cross_ratio(np.dot(B,u),u,v,np.dot(B,v))
+                        - cross_ratio(np.dot(B,u),v,u,np.dot(B,v)) )
+
+        condition_4 = M + np.sqrt(cross_ratio(u,v,np.dot(B,u),np.dot(B,v)))
+        condition_4 = 1 - condition_4
+
+        is_condition_1 = condition_1<1e-6
+        is_condition_2 = condition_2<1e-6
+        is_condition_3 = condition_3<1e-6 or condition_3b<1e-6
+        is_condition_4 = condition_4<1e-6
+
+        print('First condition: ' + str(is_condition_1))
+        print(condition_1)
+        print('Second condition: ' + str(is_condition_2))
+        print(condition_2)
+        print('Third condition: ' + str(is_condition_3))
+        print((condition_3,condition_3b))
+        print('Fourth condition: ' + str(is_condition_4))
+        print(condition_4)
+
+        return is_condition_1 and is_condition_2 and is_condition_3 and is_condition_4
+
+
+
     def from_word_to_matrix(self, word):
 
         matrix = np.identity(3,dtype=np.dtype(C_DTYPE))
@@ -211,3 +270,61 @@ class TriangleSolution(object):
 def goldman_trace(z):
     z2 = z*z.conjugate()
     return (z2 + 18) * z2 - 8*((z*z*z).real) - 27
+
+
+def is_in_SU_2_1(matrix):
+
+    J = np.array([[1,0,0],[0,1,0],[0,0,-1]],dtype=np.dtype(C_DTYPE))
+    error_estimation = np.dot(matrix.conjugate().transpose(),
+                              np.dot(J,matrix)) - J
+    max_error = R_DTYPE(0)
+    for i in range(3):
+        for j in range(3):
+            if np.abs(error_estimation[i][j]) > max_error:
+                max_error = np.abs(error_estimation[i][j])
+    return max_error
+
+
+def fixed_points_of_loxodromic(matrix):
+
+    p = np.array([0,0,1],dtype=np.dtype(C_DTYPE))
+    u = p
+    v = p
+
+    has_converged = False
+
+    while not has_converged:
+
+        p = np.dot(matrix,p)
+        p /= p[2]
+
+        if (np.abs(p[0])**2 + np.abs(p[1])**2 - 1 > -1e-14):
+
+            u = p
+            has_converged = True
+
+    has_converged = False
+    matrix = np.linalg.inv(matrix)
+
+    while not has_converged:
+
+        p = np.dot(matrix,p)
+        p /= p[2]
+
+        if (np.abs(p[0])**2 + np.abs(p[1])**2 - 1 > -1e-14):
+
+            v = p
+            has_converged = True
+
+    return u,v
+
+def scalar_prod(a,b):
+
+    return ( a[0].conjugate()*b[0]
+           + a[1].conjugate()*b[1]
+           - a[2].conjugate()*b[2] )
+
+def cross_ratio(a,b,c,d):
+
+    return np.abs(  scalar_prod(a,c) * scalar_prod(d,b)
+                 / (scalar_prod(d,a) * scalar_prod(c,b)) )

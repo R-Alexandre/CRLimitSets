@@ -24,7 +24,7 @@ def transform_input(set_points, set):
     point = set_points[0]
     set[0] = np.array([point[0] + point[1]*1.j,
                        point[2] + point[3]*1.j,
-                      C_DTYPE(1.)])
+                      C_DTYPE(1.)], dtype=np.dtype(C_DTYPE))
     j = 1
 
     for i in range(1,len(set_points)):
@@ -37,7 +37,7 @@ def transform_input(set_points, set):
 
             set[j] = np.array([point[0] + point[1]*1.j,
                                point[2] + point[3]*1.j,
-                              C_DTYPE(1.)])
+                              C_DTYPE(1.)], dtype=np.dtype(C_DTYPE))
 
             j += 1
 

@@ -20,7 +20,7 @@ class UnipotentSolutions(object):
         self.manifold = snappy.Manifold(manifold)
 
         self.fundamental_group = self.manifold.fundamental_group(
-                                                  simplify_presentation = False)
+                                                  simplify_presentation = True)
         grouphandler.GENERATORS = self.fundamental_group.generators()
         grouphandler.RELATIONS = self.fundamental_group.relators()
         grouphandler.enhance_relations()

@@ -156,6 +156,13 @@ class Interface(object):
 
             if TRACE_PLOT:
                 system("cp " + path_points + ' ' + path_points + '-S2')
+                
+        else:
+
+            set_points = np.loadtxt(path_points,dtype=np.dtype(R_DTYPE))
+            set = np.empty([len(set_points),3],dtype=np.dtype(C_DTYPE))
+            set_points = parsing.transform_input(set_points, set)
+            number_points = len(set_points)
 
 
         if AUTOMATIC_LENGTH_ENRICHMENT and number_points >= NUMBER_POINTS:

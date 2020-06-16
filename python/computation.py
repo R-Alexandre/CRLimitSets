@@ -95,6 +95,8 @@ def iterate(matrix):
 
         point = np.dot(matrix, point)
 
+        if point[2] == 0:break
+
         z_inverse = 1./point[2]
 
         #if CERTIFICATION:
@@ -212,7 +214,7 @@ def symmetrize(set_points, symmetry, stack):
 
             z_abs2 = abs2(point[2])
 
-            if (z_abs2 < ENRICH_PRECISION
+            if z_abs2 != 0 and (z_abs2 < ENRICH_PRECISION
                 and 1./z_abs2 < ENRICH_PRECISION):
 
                 point = point / point[2]
@@ -239,7 +241,7 @@ def light_symmetrize(set_points, symmetries, stack):
 
                 z_abs2 = abs2(point[2])
 
-                if (z_abs2 < ENRICH_PRECISION
+                if z_abs2 != 0 and (z_abs2 < ENRICH_PRECISION
                     and 1./z_abs2 < ENRICH_PRECISION):
 
                     point = point / point[2]
@@ -267,7 +269,7 @@ def enrich_point(point, list_a, list_b, stack, l):
 
                 z_abs2 = abs2(point_it[2])
 
-                if (z_abs2 < ENRICH_PRECISION
+                if z_abs2 != 0 and (z_abs2 < ENRICH_PRECISION
                     and 1./z_abs2 < ENRICH_PRECISION):
 
                     point_it = point_it / point_it[2]
