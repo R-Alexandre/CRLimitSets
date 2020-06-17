@@ -3,12 +3,11 @@
 
 import numpy as np
 import snappy
-import solution
 import grouphandler
 
 C_DTYPE = np.cdouble
 
-class EightKnotSolution(solution.Solution):
+class EightKnotSolution(object):
     """docstring for EightKnotSolution."""
 
     def __init__(self, parameter):
