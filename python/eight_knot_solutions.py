@@ -73,14 +73,20 @@ class EightKnotSolution(object):
         m_c = np.dot(m_a,np.dot(m_b,np.dot(m_a_inv,m_b_inv)))
         m_ac = np.dot(m_a,m_c)
         m_cac = np.dot(m_c,m_ac)
-        self.elementary_symmetries = np.array([#m_c,
-                                               #np.dot(m_c,m_c),
-                                               #np.dot(m_c,np.dot(m_c,m_c)),
-                                               m_ac,
-                                               np.dot(m_ac,m_ac),
-                                               m_cac,
-                                               np.dot(m_cac,m_cac)])
-        self.symmetries = self.elementary_symmetries
+        self.elementary_symmetries = np.array([m_c,
+                                               np.dot(m_c,m_c),
+                                               np.dot(m_c,np.dot(m_c,m_c))])#,
+                                               #m_ac,
+                                               #np.dot(m_ac,m_ac),
+                                               #m_cac,
+                                               #np.dot(m_cac,m_cac)])
+        self.symmetries = np.array([m_c,
+                                    np.dot(m_c,m_c),
+                                    np.dot(m_c,np.dot(m_c,m_c)),
+                                    m_ac,
+                                    np.dot(m_ac,m_ac),
+                                    m_cac,
+                                    np.dot(m_cac,m_cac)])
 
         return {'a': m_a,     'b': m_b,
                 'A': m_a_inv, 'B': m_b_inv}
