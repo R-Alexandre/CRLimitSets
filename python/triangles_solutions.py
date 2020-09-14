@@ -16,8 +16,8 @@ class TriangleSolution(object):
     def __init__(self, parameter=(3,3,4,0.)):
         self.parameter = parameter
 
-        if not self.is_acceptable():
-            raise AssertionError('Parameters not acceptable. Comment to force.')
+        #if not self.is_acceptable():
+            #raise AssertionError('Parameters not acceptable. Comment to force.')
 
         self.symmetries = []
         self.elementary_symmetries = []
@@ -28,20 +28,22 @@ class TriangleSolution(object):
 
         # a = 12; b = 23; c = 31
 
+        if grouphandler.GENERATORS != []:
+            grouphandler.GENERATORS = []
+            grouphandler.RELATIONS = []
+
         grouphandler.GENERATORS = ['a','b','c']
         grouphandler.RELATIONS = ['abc',
                                   'a'*parameter[0],
                                   'b'*parameter[1],
                                   'c'*parameter[2],
                                   'ab'*parameter[2],
-                                  'bc'*parameter[0],
                                   'ac'*parameter[1]]
-
         grouphandler.enhance_relations()
         grouphandler.enhance_generators()
 
-        jorg = self.verifies_Jorgensen()
-        print('Discrete following Jorgensen conditions? ' + str(jorg))
+        #jorg = self.verifies_Jorgensen()
+        #print('Discrete following Jorgensen conditions? ' + str(jorg))
 
     def is_acceptable(self):
 
@@ -156,17 +158,17 @@ class TriangleSolution(object):
         i2 = np.dot(M_inv,np.dot(i2,M))
         i3 = np.dot(M_inv,np.dot(i3,M))
 
-        m_123 = np.dot(i1,np.dot(i2,i3))
-        trace_123 = np.trace(m_123)
-        print('Trace of 123: ' + str(trace_123))
-        print(' Goldman: '
-              +str(goldman_trace(trace_123)))
+        #m_123 = np.dot(i1,np.dot(i2,i3))
+        #trace_123 = np.trace(m_123)
+        #print('Trace of 123: ' + str(trace_123))
+        #print(' Goldman: '
+        #      +str(goldman_trace(trace_123)))
 
-        m_2313 = np.dot(i2,np.dot(i3,np.dot(i1,i3)))
-        trace_2313 = np.trace(m_2313)
-        print('Trace of 2313: ' + str(trace_2313))
-        print(' Goldman: '
-              +str(goldman_trace(trace_2313)))
+        #m_2313 = np.dot(i2,np.dot(i3,np.dot(i1,i3)))
+        #trace_2313 = np.trace(m_2313)
+        #print('Trace of 2313: ' + str(trace_2313))
+        #print(' Goldman: '
+        #      +str(goldman_trace(trace_2313)))
 
 
         # a = 12; b = 23; c = 31
@@ -298,7 +300,7 @@ def fixed_points_of_loxodromic(matrix):
         p = np.dot(matrix,p)
         p /= p[2]
 
-        if (np.abs(p[0])**2 + np.abs(p[1])**2 - 1 > -1e-14):
+        if (np.abs(p[0])**2 + np.abs(p[1])**2 - 1 > -1e-13):
 
             u = p
             has_converged = True
@@ -311,7 +313,7 @@ def fixed_points_of_loxodromic(matrix):
         p = np.dot(matrix,p)
         p /= p[2]
 
-        if (np.abs(p[0])**2 + np.abs(p[1])**2 - 1 > -1e-14):
+        if (np.abs(p[0])**2 + np.abs(p[1])**2 - 1 > -1e-13):
 
             v = p
             has_converged = True

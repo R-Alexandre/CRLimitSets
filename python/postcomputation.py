@@ -9,9 +9,11 @@ from parsing import *
 from numba import jit
 import numba
 
-DEBUG = True
+DEBUG = False
+VERBOSE = None
 
 FRAME_SHOW = None
+DECIMALS_FILTER = None
 
 ALREADY_PU_2_1 = None
 ALREADY_SIEGEL = None
@@ -54,14 +56,14 @@ def siegel_projection(stack, set_points_enrich):
 
 def base_point_stereographic_projection(data):
 
-    print('Determining base point for stereographic projection.')
+    if VERBOSE : print('Determining base point for stereographic projection.')
     Y = np.ones(len(data), dtype = np.dtype(C_DTYPE))
     set_points = np.array([p[:2] for p in data])
     X = np.linalg.lstsq(set_points,Y,rcond=-1)
 
     vect = X[0]
     vect = - vect / np.sqrt(np.abs(vect[0]**2) + np.abs(vect[1]**2))
-    print(vect)
+    if VERBOSE: print(vect)
     return np.array(vect,dtype=np.dtype(C_DTYPE))
 
 """
@@ -138,7 +140,8 @@ def points_to_show_with_basis_transformation(set_points_enrich,
     if DEBUG:
         set_points = np.dot(basis_transformation,
                                set_points_enrich.transpose()).transpose()
-        print('PU(2,1) error measurement is: ' + str(is_PU_2_1(set_points)))
+        if VERBOSE:
+            print('PU(2,1) error measurement is: ' + str(is_PU_2_1(set_points)))
     #
 
     t = time()
@@ -157,7 +160,7 @@ def points_to_show_with_basis_transformation(set_points_enrich,
                                set_points_enrich.transpose()).transpose()
 
     stack = np.empty([len(set_points_enrich),3], dtype=np.dtype(R_DTYPE))
-    print('Projecting.')
+    if VERBOSE : print('Projecting.')
 
     if DO_STEREOGRAPHIC:
         base_point = (BASE_POINT_PROJECTION
@@ -172,42 +175,52 @@ def points_to_show_with_basis_transformation(set_points_enrich,
 
     stack,j = frame_stack(stack)
 
-    file = open(path_points_for_show, 'a')
-    np.savetxt(file, stack[:j], fmt=FMT)
+    if VERBOSE:
+        print(time()-t)
+        print('Sorting.')
+
+    w = time()
+    stack_ram = stack[:j]
+    nei, index = np.unique(stack_ram.round(decimals=DECIMALS_FILTER),
+                           axis=0,return_index=True)
+    stack_ram = stack_ram[index]
+    file = open(path_points_for_show,'a')
+    np.savetxt(file,stack_ram,fmt=FMT)
     file.close()
-    print(time()-t)
+    if VERBOSE: print(time() - w)
 
     return 0
 
 
 def acquire_data(path_points):
 
-    print('Acquire data.')
+    if VERBOSE : print('Acquire data.')
     t = time()
     set_points = np.loadtxt(path_points,
                                        dtype=np.dtype(R_DTYPE))
 
 
     set = np.empty([len(set_points),3],dtype=np.dtype(C_DTYPE))
-    set_points = transform_input(set_points, set)
-    print(time()-t)
-    print('Acquired ' + str(len(set_points)) + ' points.')
+    set_points = transform_input_straight_3r(set_points, set)
+    if VERBOSE:
+        print(time()-t)
+        print('Acquired ' + str(len(set_points)) + ' points.')
 
     return set_points
 
-def select_points_for_show_with_basis(path_points,
+def compute_points_for_show_with_basis(path_points,
                                       path_points_for_show,
                                       basis_transformation):
 
     t = time()
-    print('Acquire data.')
+    if VERBOSE : print('Acquire data.')
     set_points = np.loadtxt(path_points,
                                    dtype=np.dtype(R_DTYPE))
-    print(time()-t)
+    if VERBOSE: print(time()-t)
 
     set = np.empty([len(set_points),3],dtype=np.dtype(C_DTYPE))
-    set_points = transform_input(set_points, set)
-    print('Has ' + str(len(set_points)) + ' points to show.')
+    set_points = transform_input_straight_3r(set_points, set)
+    if VERBOSE: print('Has ' + str(len(set_points)) + ' points to show.')
 
     points_to_show_with_basis_transformation(set_points,
                                              path_points_for_show,
@@ -216,24 +229,18 @@ def select_points_for_show_with_basis(path_points,
     return 0
 
 
-def select_points_for_show(path_points_enriched,
+def compute_points_for_show(set_points_3d,
                            path_points_for_show):
 
     t = time()
-    print('Acquire data.')
-    set_points_enrich = np.loadtxt(path_points_enriched,
-                                   dtype=np.dtype(R_DTYPE))
-    print(time()-t)
 
-    set = np.empty([len(set_points_enrich),3],dtype=np.dtype(C_DTYPE))
-    set_points_enrich = transform_input(set_points_enrich, set)
-    print('Has ' + str(len(set_points_enrich)) + ' points to show.')
+    if VERBOSE: print('Has ' + str(len(set_points_3d)) + ' points to show.')
 
     basis_transformation = np.identity(3,dtype=np.dtype(C_DTYPE))
 
-    if is_PU_2_1(set_points_enrich) < 1e-6:
+    if is_PU_2_1(set_points_3d) < 1e-6:
 
-        print('Already in PU(2,1) nice basis.')
+        if VERBOSE : print('Already in PU(2,1) nice basis.')
 
     else:
         siegel = np.array([
@@ -243,19 +250,18 @@ def select_points_for_show(path_points_enriched,
         ],dtype=np.dtype(C_DTYPE))
 
         siegel_set = np.dot(siegel,
-                            set_points_enrich.transpose()).transpose()
+                            set_points_3d.transpose()).transpose()
 
         if is_PU_2_1(siegel_set) < 1e-6:
 
-            print('In Siegel basis.')
+            if VERBOSE : print('In Siegel basis.')
             basis_transformation = siegel
 
         else:
 
-            basis_transformation = get_basis_transformation(set_points_enrich)
+            basis_transformation = get_basis_transformation(set_points_3d)
 
-
-    points_to_show_with_basis_transformation(set_points_enrich,
+    points_to_show_with_basis_transformation(set_points_3d,
                                              path_points_for_show,
                                              basis_transformation)
 
@@ -362,7 +368,7 @@ def determine_basis_transformation(hermitian_equation):
         D = np.array([N[0][0].real, N[1][1].real, N[2][2].real],
                       dtype=np.dtype(R_DTYPE))
 
-        print('Signature: ' + str(D))
+        if VERBOSE : print('Signature: ' + str(D))
 
         delta = np.diag(np.sqrt(np.abs([1./D[0],
                                         1./D[1],
@@ -417,7 +423,7 @@ def set_for_hermitian_equation(set_points, set):
 
 def solve_hermitian_equation_parameters(set_points):
 
-    print('\n Determining an hermitian equation for projection.')
+    if VERBOSE : print('\n Determining an hermitian equation for projection.')
 
     set = np.empty([len(set_points),9], dtype=np.dtype(C_DTYPE))
     set = set_for_hermitian_equation(set_points, set)

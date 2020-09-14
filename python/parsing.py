@@ -9,7 +9,6 @@ import numba
 C_DTYPE = None
 EPSILON_FILTER = None
 
-
 @numba.vectorize([numba.float64(numba.float64),
                   numba.float32(numba.float32)])
 def norm1(x):
@@ -19,26 +18,13 @@ def norm1(x):
 
 
 @jit(nopython=True, cache=True, nogil=True)
-def transform_input(set_points, set):
+def transform_input_straight_3r(set_points, set):
 
-    point = set_points[0]
-    set[0] = np.array([point[0] + point[1]*1.j,
-                       point[2] + point[3]*1.j,
-                      C_DTYPE(1.)], dtype=np.dtype(C_DTYPE))
-    j = 1
-
-    for i in range(1,len(set_points)):
+    for i in range(len(set_points)):
 
         n_point = set_points[i]
+        set[i] = np.array([n_point[0] + n_point[1]*1.j,
+                           n_point[2] + n_point[3]*1.j,
+                          C_DTYPE(1.)], dtype=np.dtype(C_DTYPE))
 
-        if (norm1(point-n_point) > EPSILON_FILTER).any():
-
-            point = n_point
-
-            set[j] = np.array([point[0] + point[1]*1.j,
-                               point[2] + point[3]*1.j,
-                              C_DTYPE(1.)], dtype=np.dtype(C_DTYPE))
-
-            j += 1
-
-    return set[:j]
+    return set

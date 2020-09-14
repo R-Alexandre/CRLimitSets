@@ -13,6 +13,6 @@ unset ytics
 
 ang = 5
 
-set output "outpic.jpeg"
+set output sprintf("%s.jpeg", outname)
 set view 85,ang,2,1
 splot filename notitle with points pt 7 ps 0.25 lc rgb 'black'

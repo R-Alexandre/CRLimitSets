@@ -11,11 +11,14 @@ from grouphandler import*
 import numba
 from numba import jit
 
+VERBOSE = None
+
 LENGTH_WORDS = None
 LENGTH_WORDS_ENRICHMENT = None
 
 EPSILON = None
 ITERATIONS_NUMBER = None
+DECIMALS_FILTER = None
 
 GLOBAL_PRECISION = None
 ACCUMULATED_INVERSE_PRECISION = None
@@ -132,14 +135,13 @@ def compute_list(a, list_b, stack):
         point = iterate(matrix)
 
         if point[0]:
-            stack[j] = np.array([point[1][0],point[1][1]],
-                             dtype = np.dtype(C_DTYPE))
+            stack[j] = point[1]
             j += 1
 
     return (stack,j)
 
 # Gere la mise en place globale du calcul.
-def compute(path_points, solution):
+def compute(solution):
     """ Cette fonction gère le premier calcul des points, par convergence.
 
     À partir de la combinaison de listes afin d'avoir des mots de longueur
@@ -155,21 +157,22 @@ def compute(path_points, solution):
     """
 
     lists_words = lists_forming_words_length(LENGTH_WORDS)
-    print('Made lists for '
-          + str(len(lists_words[0]))
-          + ' x '
-          + str(len(lists_words[1]))
-          + ' = '
-          + str(len(lists_words[0]) * len(lists_words[1]))
-          + ' words.')
+    if VERBOSE:
+        print('Made lists for '
+              + str(len(lists_words[0]))
+              + ' x '
+              + str(len(lists_words[1]))
+              + ' = '
+              + str(len(lists_words[0]) * len(lists_words[1]))
+              + ' words.')
 
-    system("date \"+Time: %H:%M:%S\"")
+        system("date \"+Time: %H:%M:%S\"")
 
     n = len(lists_words[0])*len(lists_words[1])
 
     list_b = np.array([solution.from_word_to_matrix(b)
                        for b in lists_words[0]])
-    print('Now running.')
+    if VERBOSE : print('Now running.')
 
     produced = 0
     last_percent = 0
@@ -177,29 +180,44 @@ def compute(path_points, solution):
     T = time()
 
     l = len(list_b)
-    stack_zero = np.empty([l,2], dtype=np.dtype(C_DTYPE))
-
-    file = open(path_points,'a')
+    stack_zero = np.empty([l,3], dtype=np.dtype(C_DTYPE))
+    stack_ram = np.empty([n,3], dtype=np.dtype(C_DTYPE))
+    index_stack_ram = 0
 
     for a in (solution.from_word_to_matrix(a) for a in lists_words[1]):
 
-        stack,j = compute_list(a,list_b, stack_zero)
-        np.savetxt(file,stack[:j], fmt=FMT)
+        stack,m = compute_list(a,list_b, stack_zero)
 
-        produced += j
+        stack_ram[index_stack_ram:index_stack_ram+m]=stack[:m]
+        index_stack_ram += m
 
-        percent = int(produced*10/n)
+        produced += m
 
-        if last_percent != percent:
-            print('\n At ' + str(percent*10) + ' %.')
-            system("date \"+Time: %H:%M:%S\"")
-            last_percent = percent
+        if VERBOSE:
 
-    file.close()
-    print(time() - T)
+            percent = int(produced*10/n)
 
-    print('Made ' + str(produced) + ' points.')
-    return 0
+            if  last_percent != percent:
+                print('\n At ' + str(percent*10) + ' %.')
+                system("date \"+Time: %H:%M:%S\"")
+                last_percent = percent
+
+    if VERBOSE:
+        print(time() - T)
+        print('Now sorting')
+
+    T = time()
+
+    stack_ram.resize((index_stack_ram,3))
+    nei, index = np.unique(stack_ram.round(decimals=DECIMALS_FILTER),
+                           axis=0,return_index=True)
+    stack_ram = stack_ram[index]
+
+    if VERBOSE:
+        print(time() - T)
+        print('Made ' + str(produced) + ' points.')
+
+    return stack_ram
 
 @jit(nopython=True, cache=True, nogil=True)
 def symmetrize(set_points, symmetry, stack):
@@ -244,9 +262,7 @@ def light_symmetrize(set_points, symmetries, stack):
                 if z_abs2 != 0 and (z_abs2 < ENRICH_PRECISION
                     and 1./z_abs2 < ENRICH_PRECISION):
 
-                    point = point / point[2]
-
-                    stack[m] = np.array([point[0],point[1]])
+                    stack[m] = point / point[2]
                     m += 1
 
     return (stack,m)
@@ -272,9 +288,7 @@ def enrich_point(point, list_a, list_b, stack, l):
                 if z_abs2 != 0 and (z_abs2 < ENRICH_PRECISION
                     and 1./z_abs2 < ENRICH_PRECISION):
 
-                    point_it = point_it / point_it[2]
-
-                    stack[m] = np.array([point_it[0],point_it[1]])
+                    stack[m] = point_it / point_it[2]
                     m += 1
 
     return (stack,m)
@@ -292,46 +306,56 @@ def enrichissement(set_points, path_points_enriched, solution):
     list_b = np.array([solution.from_word_to_matrix(b)
                        for b in lists_words[1]])
 
-    print('Made lists for ' +
-          str(len(lists_words[0]) * len(lists_words[1]))
-          + ' words.')
-
-
-    print('Starting computation.')
+    if VERBOSE:
+        print('Made lists for ' +
+                 str(len(lists_words[0]) * len(lists_words[1]))
+                 + ' words.')
+        print('Starting computation.')
 
     last_percent = 0
 
     l = len(list_a) * len(list_b)
-    stack = np.zeros([l,2], dtype=np.dtype(C_DTYPE))
+    stack = np.zeros([l,3], dtype=np.dtype(C_DTYPE))
 
     n = len(list_a) * len(list_b) * len(set_points)
 
     T = time()
-    file = open(path_points_enriched,'a')
-
-    old_points = np.array([np.array([point[0],point[1]])
-                           for point in set_points])
-
-    np.savetxt(file, old_points, fmt=FMT)
 
     produced = 0
+    stack_ram = np.empty([n+len(set_points),3], dtype=np.dtype(C_DTYPE))
+    stack_ram[:len(set_points)] = set_points
+    index_stack_ram = len(set_points)
 
     for point in set_points:
 
         stack,m = enrich_point(point, list_a, list_b, stack, len(list_b))
-        np.savetxt(file, stack[:m], fmt=FMT)
+
+        stack_ram[index_stack_ram:index_stack_ram+m] = stack[:m]
+        index_stack_ram += m
 
         produced += m
-        percent = int(produced*10/n)
 
-        if last_percent != percent:
-            print('\n Enrichment at ' + str(percent*10) + ' %.')
-            system("date \"+Time: %H:%M:%S\"")
-            last_percent = percent
+        if VERBOSE:
 
-    file.close()
-    print(time() - T)
+            percent = int(produced*10/n)
 
-    print('Has now ' + str(produced) + ' points.')
+            if last_percent != percent:
+                print('\n Enrichment at ' + str(percent*10) + ' %.')
+                system("date \"+Time: %H:%M:%S\"")
+                last_percent = percent
 
-    return 0
+    if VERBOSE:
+        print(time() - T)
+        print('Now sorting')
+        T = time()
+
+    stack_ram.resize((index_stack_ram,3))
+    nei, index = np.unique(stack_ram.round(decimals=DECIMALS_FILTER),
+                           axis=0,return_index=True)
+    stack_ram = stack_ram[index]
+
+    if VERBOSE:
+        print(time() - T)
+        print('Has now ' + str(produced) + ' points.')
+
+    return stack_ram
