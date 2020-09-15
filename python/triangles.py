@@ -8,7 +8,7 @@ import numpy as np
 
 import triangles_solutions
 
-import undiscrete
+#import undiscrete
 
 R_DTYPE = np.longdouble
 
@@ -102,37 +102,3 @@ def find_parameter(p,q,r):
     trace = (min_trace - 4) / (16*c_12*c_23*c_31)
 
     return np.arccos(trace) / np.pi
-
-
-
-p,q,r = 3,3,3
-
-for i in range(7):
-
-    p = 3 + i
-    #print('p: '+str(p))
-
-    for j in range(20):
-
-        q = 3 + i + j
-
-        for k in range(20):
-
-            r = 3 + i + j + k
-
-            #parameter = find_parameter(p,q,r)
-
-            #solution_a = triangles_solutions.TriangleSolution((p,q,r,parameter))
-            #solution_b = triangles_solutions.TriangleSolution((p,q,r,0.9))
-
-            #result = undiscrete.find_elliptic(solution_a,solution_b)
-
-            #if result != 'Nothing found.':
-            #    print((p,q,r))
-            #    print(parameter)
-            #    print(result)
-            #    print('\n')
-
-
-
-#print('Done.')
