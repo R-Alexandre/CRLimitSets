@@ -147,6 +147,8 @@ class Interface(object):
 
                     stack_ram[index_stack_ram:index_stack_ram+m] = stack[:m]
                     index_stack_ram += m
+                else:
+                    do_enrichment = False    
 
             del stack_blank
             del stack
