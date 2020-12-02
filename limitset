@@ -18,6 +18,9 @@ usage: limitset m004 3
        limitset all
        computes every limitset of every available manifold
 
+       limitset multithreading
+       same but with multithreading
+
        limitset fractals
        computes every limitset corresponding to each known fractal class
 
@@ -32,6 +35,28 @@ if [[ $manifold = 'all' ]]; then
   for m in ${listmanifolds//,/ }
   do
     python python/unipotent.py $m
+  done
+fi
+
+if [[ $manifold = 'multithreading' ]]; then
+  i=0
+  p=''
+  q=''
+
+  for m in ${listmanifolds//,/ }
+  do
+
+    if [[ $i = 0 ]]; then
+      p=${m}
+      i=1
+    elif [[ $i = 1 ]]; then
+      q=${m}
+      i=2
+    else
+      python python/unipotent.py $m && python python/unipotent.py $p && python python/unipotent.py $q
+      i=0
+    fi
+
   done
 fi
 

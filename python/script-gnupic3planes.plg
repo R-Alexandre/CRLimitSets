@@ -1,4 +1,4 @@
-set term jpeg medium size 1000,1000
+set term jpeg medium size 1500,1500
 
 set ticslevel 0
 set view equal xyz

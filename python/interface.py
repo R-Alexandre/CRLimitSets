@@ -148,7 +148,7 @@ class Interface(object):
                     stack_ram[index_stack_ram:index_stack_ram+m] = stack[:m]
                     index_stack_ram += m
                 else:
-                    do_enrichment = False    
+                    do_enrichment = False
 
             del stack_blank
             del stack
@@ -222,7 +222,10 @@ class Interface(object):
                 np.savetxt(file,set_points_3d[:,:2],fmt=FMT)
                 file.close()
 
-            if APPLY_SYMMETRIES:
+            number_points = len(set_points_3d)
+
+            if ( (not AUTOMATIC_LENGTH_ENRICHMENT and APPLY_SYMMETRIES)
+                 or number_points < NUMBER_POINTS) :
 
                 number_points = len(set_points_3d)
                 if VERBOSE: print("Enriched initial file has "
