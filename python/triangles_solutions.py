@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import snappy
+#import snappy
 import grouphandler
 
 from numba import jit

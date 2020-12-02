@@ -367,9 +367,14 @@ class Interface(object):
                 if VERBOSE : print("Compressing files in manifold's directory.")
                 system('gzip -9 ' + path_ressources+'*')
 
-                system("cp " + path_points_for_show + '.gz '
-                        + PATH_SHOW
-                        + representation_name + '.gz')
+                if CLEAN_RDIR:
+                    system("mv " + path_points_for_show + '.gz '
+                            + PATH_SHOW
+                            + representation_name + '.gz')
+                else:
+                    system("cp " + path_points_for_show + '.gz '
+                            + PATH_SHOW
+                            + representation_name + '.gz')
 
         else:
             system("cp " + path_points_for_show + ' '

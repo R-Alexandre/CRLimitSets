@@ -1,20 +1,20 @@
-# limitset
+# Requirements
 
-Le fonctionnement est le suivant.
-`python python/unipotent.py m006` calcule les ensembles limites des représentations
-(conjuguées à une représentation) dans PU(2,1) du groupe fondamental
-de la variété m006.
-La commande `python python/unipotent.py m006 2` permet de ne calculer que la deuxième
-représentation.
+The code currently works with `Python 3.8`. The required packages are described in `package_requirements.txt` and this file can be parsed to `pip`.
 
-# Requis
 
-`python` et `UNIX` sont requis.
+The program also requires `gnuplot` and `imagemagick`.
 
-Les librairies `snappy` et `numpy` sont requises.
-Les autres sont classiques d'une
-installation de python. Par ailleurs, avec la version actuelle, seul `python2`
-est utilisable en raison d'un bug de snappy avec `python3`.
+# Functioning
+
+Set the root to `repository/simulations/`. And assume that `python` corresponds to `Python 3.8`.
+
+- The main parameters are to be prescribed in the file `python/parameters`.
+- For the simulation of the PU(2,1) representations of the figure eight-knot do `python python/eight_knot.py`. The range of the parameters is described in the same file.
+- For the simulation of the unipotent representations in PU(2,1), do `./unipotent` and follow instructions.
+- For the simulation of a complex hyperbolic triangle group, do `python python/triangles.py`. The parameters are described in the same file.
+
+
 
 # Fonctionnement général
 
@@ -32,9 +32,6 @@ fondamental). Par le théorème de la trace de Goldman, on vérifie
 Chaque matrice est appliquée sur un point de l'espace projectif jusqu'à
 convergence à `EPSILON` près.
 
-Les points obtenus sont inscrits dans le fichier `points`, puis sont
-triés par la commande UNIX `sort`.
-
 ## Deuxième phase
 
 Si le nombre de points obtenus est insuffisant par rapport à `NUMBER_POINTS`,
@@ -43,46 +40,30 @@ alors la deuxième phase intervient.
 La deuxième phase consiste à récupérer les points obtenus précédemment
 et à itérer sur eux des mots de longueur `LENGTH_WORDS_ENRICHMENT`. Ce paramètre est automatiquement estimé (plus ou moins bien) en comparant le paramètre `NUMBER_POINTS` avec le nombre de points obtenus jusqu'alors.
 
-Ces points sont ensuite inscrits dans le fichier `enrich`. Ce fichier est ensuite trié par la commande UNIX `sort`.
-
 ## Troisième phase
 
 La troisième phase consiste à récupérer les derniers points obtenus et à
 effectuer une bonne projection 3D.
 
 Pour cela, on commence tout d'abord par évaluer un bon produit hermitien
-correspondant à la structure CR. C'est fait par la résolution d'un système linéaire imposant que les points aient une valeur nulle par le produit hermitien, et un autre point pris comme différence du premier et dernier ait une valeur égale à -1. Le système linéaire est résolu avec une méthode des moindres carrés avec les points inscrits dans `filtered`.
+correspondant à la structure CR. C'est fait par la résolution d'un système linéaire imposant que les points aient une valeur nulle par le produit hermitien, et un autre point pris comme différence du premier et dernier ait une valeur égale à -1. Le système linéaire est résolu avec une méthode des moindres carrés.
 
 Ensuite, on procède à une projection stéréographique (une projection de
 Siegel est également disponible). Le point base depuis lequel on
 effectue la projection
 est donné par `BASE_POINT_PROJECTION`.
 
-Les points résultants sont inscrits dans le fichier `show-stereo` si la
-projection stéréographique a été effectuée, `show` sinon.
-Le fichier est trié.
-
 Si `DO_GNU_PLOT = True` alors avec le script `script-gnupic.plg`, une image est produite avec *gnuplot*.
 
 # Résultats
 
-Les fichiers sont
-compressés avec `gzip`.
-
 Les résultats sont placés dans le dossier `results/`.
 
-Une fois le programme exécuté, celui-ci produit un certain nombre de fichiers
-résultants. Tous sont placés initialement dans un sous-dossier de la forme
-`manifolds/m006/2-6`
-où `2-6` indique qu'il s'agit de la deuxième représentation et d'un calcul
-effectué avec 6 lettres par mot (à la première étape).
-Mais les résultats peuvent aussi être trouvés dans deux dossiers distincts de
-`manifolds`.
 
-- `pics/` recueille toutes les images fournies à la dernière étape. À noté que
+- `pics/` recueille toutes les images fournies à la dernière étape. À noter que la
 dernière image calculée pour une même représentation est servie.
 - `show/` recueille tous les derniers fichiers de points obtenus à la dernière étape (après projection). De
-même que `pics`, seul le dernier fichié calculé pour une même représentation
+même que `pics`, seul le dernier fichier calculé pour une même représentation
 paraît. Ces résultats peuvent être utilisés par des logiciels de visualisation
 comme `ParaView` pour afficher les points (ce dernier s'utilise avec le
 `ParticlesReader`).
@@ -99,7 +80,7 @@ par `ITERATIONS_NUMBER`. La certification
 permet de s'assurer qu'à chaque étape, les valeurs obtenus dans C^3 sont
 à coordonnées en valeur absolue plus petites que `GLOBAL_PRECISION`.
 
-Un contrôle plus décisif se fait en métrisant l'étape où l'on repasse en carte
+Un contrôle plus décisif se fait en maîtrisant l'étape où l'on repasse en carte
 z=1 par une inversion par z. À chaque étape, si la norme de z^{-1} est plus
 grande que 1, on multiplie une constante (qui traverse toutes les itérations, et initialement vaut 1)
 par cette norme. On contrôle que la constante est toujours inférieure à la
@@ -110,13 +91,3 @@ matrice. Pour chaque transformation, on contrôle à nouveau que l'image est
 encore à coordonnées plus petites que `GLOBAL_PRECISION`. Cette fois-ci,
 on demande à ce que la norme de z et de son inverse sont toutes deux plus
 petites que `ENRICH_PRECISION`.
-
-# À faire
-
-- Il faudrait pouvoir contrôler l'approximation des matrices pour avoir une
-certification plus fiable. Actuellement, elles sont calculées par pari avec 1000 décimales de calcul (mais sans pouvoir calculer combien sont exactes, même si ça converge avec le nombre de décimales grandissant).
-- Trouver plus finement et automatiquement un bon pôle de projection
-stéréographique.
-- Il faudrait pouvoir réduire le nombre de représentations quand le degré
-(donné par `M.ptolemy_variety(3,0).degree_to_shapes()`)
-est plus grand que 1. De même on devrait pouvoir se passer de calculer des représentations qui diffèrent d'une action de Galois.

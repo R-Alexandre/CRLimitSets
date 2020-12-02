@@ -11,24 +11,22 @@ import eight_knot_solutions
 arg = sys.argv;
 i = int(arg[1])
 
-scale = 0.01
+scale = 0.02
 
-base = (3.000, -0.000)
-end = (4.000 + scale, 0.400 + scale)
+base = (3.00, -0.)
+end = (4.50 + scale, 0.4 + scale)
 
 modus = int((end[0] - base[0])/scale)
 
 parameter = np.clongdouble(base[0] + int(i%modus) * scale
                          + base[1]*1.j + int(i/modus) * scale * 1.j)
 
-
 name = (np.format_float_positional(parameter.real, unique=False,
                                    precision=3, fractional=True, trim='k')
       + '_'
       + np.format_float_positional(parameter.imag, unique=False,
                                    precision=3, fractional=True, trim='k'))
-print(name)
-
+#print(name)
 
 path_results = 'eight_knot-results/'
 
