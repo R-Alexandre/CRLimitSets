@@ -53,7 +53,7 @@ if [[ $manifold = 'multithreading' ]]; then
       q=${m}
       i=2
     else
-      python python/unipotent.py $m && python python/unipotent.py $p && python python/unipotent.py $q
+      python python/unipotent.py $m & python python/unipotent.py $p & python python/unipotent.py $q
       i=0
     fi
 

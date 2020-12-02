@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+VERBOSE = False
+
 import sys
 import interface
 import subprocess
@@ -28,10 +30,11 @@ if len(arg) == 3:
     EVERY_REPRESENTATION = False
     SELECTED_REPRESENTATION = int(arg[2])
 
-print('\n'
-      + '=' + "\n"
-      + '=== Manifold chosen: ' + MANIFOLD + ' ===' + '\n'
-      + "=" + '\n')
+if VERBOSE:
+    print('\n'
+        + '=' + "\n"
+        + '=== Manifold chosen: ' + MANIFOLD + ' ===' + '\n'
+        + "=" + '\n')
 
 
 path_results = 'unipotent-results/'
@@ -50,12 +53,13 @@ if EVERY_REPRESENTATION:
     for i in range(n):
         solution = unipotent_solutions.get_solution(i)
 
-        print('\n' + '=' + "\n"
-              + '=== Computing representation '
-              + str(i+1)
-              +  ' (over ' + str(n) + ') '
-              +  ' ===' + '\n'
-              + "=" + '\n')
+        if VERBOSE:
+            print('\n' + '=' + "\n"
+                + '=== Computing representation '
+                + str(i+1)
+                +  ' (over ' + str(n) + ') '
+                +  ' ===' + '\n'
+                + "=" + '\n')
 
         name = MANIFOLD + '-' + str(i+1)
         path_name = MANIFOLD + '/' + str(i+1)
@@ -65,12 +69,13 @@ if not EVERY_REPRESENTATION:
     i = SELECTED_REPRESENTATION - 1
     solution = unipotent_solutions.get_solution(i)
 
-    print('\n' + '=' + "\n"
-          + '=== Computing representation '
-          + str(i+1)
-          +  ' (over ' + str(n) + ') '
-          +  ' ===' + '\n'
-          + "=" + '\n')
+    if VERBOSE:
+        print('\n' + '=' + "\n"
+            + '=== Computing representation '
+            + str(i+1)
+            +  ' (over ' + str(n) + ') '
+            +  ' ===' + '\n'
+            + "=" + '\n')
 
     name = MANIFOLD + '-' + str(i+1)
     path_name = MANIFOLD + '/' + str(i+1)

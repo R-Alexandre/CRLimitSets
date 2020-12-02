@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+VERBOSE = False
+
 import numpy as np
 import snappy
 import grouphandler
@@ -30,7 +32,7 @@ class UnipotentSolutions(object):
         # dans PGL vs. SL
         representations_degree = self.manifold.ptolemy_variety(3
                                                           ,0).degree_to_shapes()
-        print('Degree: ' + str(representations_degree))
+        if VERBOSE: print('Degree: ' + str(representations_degree))
 
 
         ptolemy_solutions = self.manifold.ptolemy_variety(3
@@ -49,10 +51,11 @@ class UnipotentSolutions(object):
                                      for x in
                                      ptolemy_solutions.flatten(2).cross_ratios()
                                      if x.is_pu_2_1_representation(1e-10)])
-        print('Number of solutions: ' + str(self.number_representations))
+        if VERBOSE:
+            print('Number of solutions: ' + str(self.number_representations))
 
-
-        print('Preparing the representations.')
+        if VERBOSE:
+            print('Preparing the representations.')
         self.solutions = [[component
                       for component # go through all components in the variety
                       in per_obstruction
@@ -71,11 +74,12 @@ class UnipotentSolutions(object):
                     if solut.is_pu_2_1_representation(1e-10):
                         self.solutions_data.append([i,j,k])
 
-        print('Representations computed.')
+        if VERBOSE:
+            print('Representations computed.')
 
     def get_solution(self, solution_number):
         data = self.solutions_data[solution_number]
-        print(data)
+        if VERBOSE: print(data)
         solution = self.solutions[data[0]][data[1]][data[2]]
         return  UnipotentSolution(solution, self.fundamental_group)
 
