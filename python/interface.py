@@ -130,6 +130,7 @@ class Interface(object):
                                  ,dtype=np.dtype(C_DTYPE))
 
             stack_blank = stack_ram[:]
+            stack=[]
 
             stack_ram[:len(set_points_3d)] = set_points_3d
             index_stack_ram = len(set_points_3d)

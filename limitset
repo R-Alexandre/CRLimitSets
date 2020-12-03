@@ -39,25 +39,7 @@ if [[ $manifold = 'all' ]]; then
 fi
 
 if [[ $manifold = 'multithreading' ]]; then
-  i=0
-  p=''
-  q=''
-
-  for m in ${listmanifolds//,/ }
-  do
-
-    if [[ $i = 0 ]]; then
-      p=${m}
-      i=1
-    elif [[ $i = 1 ]]; then
-      q=${m}
-      i=2
-    else
-      python python/unipotent.py $m & python python/unipotent.py $p & python python/unipotent.py $q
-      i=0
-    fi
-
-  done
+  parallel --ungroup python python/unipotent.py ::: ${listmanifolds//,/ }
 fi
 
 if [[ $manifold = 'fractals' ]]; then

@@ -45,9 +45,7 @@ unipotent_solutions = unipotent_solutions.UnipotentSolutions(MANIFOLD)
 n = unipotent_solutions.number_representations
 
 if len(grouphandler.GENERATORS) > 4:
-    print(computation.LENGTH_WORDS)
     computation.LENGTH_WORDS -= 2
-    print(computation.LENGTH_WORDS)
 
 if EVERY_REPRESENTATION:
     for i in range(n):

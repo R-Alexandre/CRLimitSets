@@ -84,9 +84,9 @@ def iterate(matrix):
         z2 = abs2(z)
         goldman_trace = (z2 + 18) * z2 - 8*((z*z*z).real) - 27
 
-    if goldman_trace < 1e-6:
-        #if np.signbit(goldman_trace):
-        # verifie que la dynamique est hyperbolique
+    if goldman_trace < 0:
+        # 1e-6 better but problematic for m055 and m082 :
+        
         return (False,point)
 
     last_point = point
