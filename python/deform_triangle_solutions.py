@@ -12,7 +12,7 @@ R_DTYPE = np.double
 class DeformTriangleSolution(object):
     """docstring for DeformTriangleSolution."""
 
-    def __init__(self, parameter=(1,1), n=4):
+    def __init__(self, parameter, n=4):
         self.parameter = parameter
         self.n = n
 
@@ -62,8 +62,9 @@ class DeformTriangleSolution(object):
         m_A = np.linalg.inv(m_a)
         m_B = np.linalg.inv(m_b)
 
-        M = np.dot(m_A,m_b)
-        if goldman_trace(np.trace(M)) < 0:
+        M = np.dot(m_A,m_b) # 2123
+        if goldman_trace(np.trace(M)) < -1e-8:
+            print(goldman_trace(np.trace(M)))
             raise ValueError('Ab is elliptic.')
 
         self.elementary_symmetries = np.array([m_a,m_b,m_A,m_B])

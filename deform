@@ -1,7 +1,12 @@
 #!/bin/bash
 
-ls=$(seq 0 5)
-lt=$(seq -5 5)
+ls=$(seq 0 3)
+lt=$(seq -6 2 6)
+n=4
+
+if [[ $# -eq 1 ]]; then
+  n=$1
+fi
 
 python --version
-parallel --ungroup python python/deform.py ::: ${ls} ::: ${lt}
+parallel --ungroup python python/deform.py ::: ${ls} ::: ${lt} ::: $n

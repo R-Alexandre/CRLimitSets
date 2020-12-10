@@ -67,6 +67,6 @@ path_results = 'deform-results/'
 
 interf = interface.Interface(path_results)
 
-solution = deform_triangle_solutions.DeformTriangleSolution(parameter)
+solution = deform_triangle_solutions.DeformTriangleSolution(parameter,n)
 
 interf.representation_computation(solution, name, path_name)
