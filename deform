@@ -1,0 +1,7 @@
+#!/bin/bash
+
+ls=$(seq 0 5)
+lt=$(seq -5 5)
+
+python --version
+parallel --ungroup python python/deform.py ::: ${ls} ::: ${lt}
