@@ -34,29 +34,25 @@ def find_parameter(p,q,r):
 R_DTYPE = np.longdouble
 
 n=4
-s=find_parameter(3,3,n)
-t=1
-
+parameter = np.cdouble(3)
+scale = 100
 arg = sys.argv;
 
+if len(arg)==3:
 
-if len(arg)>=3:
-
-    s += int(arg[1]) / 500
-    t += int(arg[2]) / 100
+    parameter += np.cdouble((int(arg[1]) + 1.j*int(arg[2])) / scale)
 
 if len(arg)==4:
 
-    n = int(arg[3])
+    n = int(arg[1])
+    parameter += np.cdouble((int(arg[2]) + 1.j*int(arg[3])) / scale)
 
-
-parameter = (t,s)
 
 triangle_name = str(n)
-complement_name = (np.format_float_positional(s, unique=False,
-                                   precision=3, fractional=True, trim='k')
+complement_name = (np.format_float_positional(parameter.real, unique=False,
+                                   precision=2, fractional=True, trim='k')
                   + '_'
-                  + np.format_float_positional(t, unique=False,
+                  + np.format_float_positional(parameter.imag, unique=False,
                                    precision=2, fractional=True, trim='k'))
 
 name = triangle_name + '_' + complement_name

@@ -136,13 +136,16 @@ def points_to_show_with_basis_transformation(set_points_enrich,
                                              path_points_for_show,
                                              basis_transformation):
 
-    # for debug: it verifies that the basis transformation is OK
-    if DEBUG:
-        set_points = np.dot(basis_transformation,
-                               set_points_enrich.transpose()).transpose()
-        if VERBOSE:
-            print('PU(2,1) error measurement is: ' + str(is_PU_2_1(set_points)))
-    #
+    # verifies that the basis transformation is OK
+    set_points = np.dot(basis_transformation,
+                           set_points_enrich.transpose()).transpose()
+    pu_2_1_error = is_PU_2_1(set_points)
+    if VERBOSE:
+        print('PU(2,1) error measurement is: ' + str(pu_2_1_error))
+
+    if pu_2_1_error > 1e-8:
+        raise ValueError('PU(2,1) error mesurement is too high: '
+                         + str(pu_2_1_error))
 
     t = time()
 
@@ -369,6 +372,9 @@ def determine_basis_transformation(hermitian_equation):
                       dtype=np.dtype(R_DTYPE))
 
         if VERBOSE : print('Signature: ' + str(D))
+
+        if np.sign(D[0])==np.sign(D[1]) and np.sign(D[1])==np.sign(D[2]):
+            raise ValueError('Transformations not in PU(2,1).')
 
         delta = np.diag(np.sqrt(np.abs([1./D[0],
                                         1./D[1],
