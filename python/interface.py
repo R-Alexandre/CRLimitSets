@@ -48,6 +48,7 @@ class Interface(object):
         postcomputation.ALREADY_PU_2_1 = ALREADY_PU_2_1
         postcomputation.ALREADY_SIEGEL = ALREADY_SIEGEL
         postcomputation.VERBOSE = VERBOSE
+        postcomputation.FILTER_SHOW = FILTER_SHOW
         postcomputation.DECIMALS_FILTER = DECIMALS_FILTER
 
         parsing.C_DTYPE = C_DTYPE

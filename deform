@@ -1,7 +1,7 @@
 #!/bin/bash
 
-ls=$(seq 0 3)
-lt=$(seq -6 2 6)
+ls=$(seq -15 1 15)
+lt=$(seq -10 1 10)
 n=4
 
 if [[ $# -eq 1 ]]; then
@@ -9,4 +9,4 @@ if [[ $# -eq 1 ]]; then
 fi
 
 python --version
-parallel --ungroup python python/deform.py ::: ${ls} ::: ${lt} ::: $n
+parallel --ungroup python python/deform.py  ::: $n ::: ${ls} ::: ${lt}

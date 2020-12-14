@@ -14,6 +14,7 @@ VERBOSE = None
 
 FRAME_SHOW = None
 DECIMALS_FILTER = None
+FILTER_SHOW = None
 
 ALREADY_PU_2_1 = None
 ALREADY_SIEGEL = None
@@ -180,13 +181,18 @@ def points_to_show_with_basis_transformation(set_points_enrich,
 
     if VERBOSE:
         print(time()-t)
-        print('Sorting.')
+
 
     w = time()
     stack_ram = stack[:j]
-    nei, index = np.unique(stack_ram.round(decimals=DECIMALS_FILTER),
-                           axis=0,return_index=True)
-    stack_ram = stack_ram[index]
+
+    if FILTER_SHOW:
+        if VERBOSE:
+            print('Sorting.')
+        nei, index = np.unique(stack_ram.round(decimals=DECIMALS_FILTER),
+                               axis=0,return_index=True)
+        stack_ram = stack_ram[index]
+
     file = open(path_points_for_show,'a')
     np.savetxt(file,stack_ram,fmt=FMT)
     file.close()

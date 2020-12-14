@@ -38,6 +38,10 @@ parameter = np.cdouble(3)
 scale = 100
 arg = sys.argv;
 
+if len(arg)==2:
+
+    n = int(arg[1])
+
 if len(arg)==3:
 
     parameter += np.cdouble((int(arg[1]) + 1.j*int(arg[2])) / scale)

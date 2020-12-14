@@ -19,7 +19,7 @@ DO_GNU_PLOT = True
 GNU_3PLANES = True
 TILES_3D = True
 
-LENGTH_WORDS = 10
+LENGTH_WORDS = 8
 APPLY_SYMMETRIES = True
 
 AUTOMATIC_LENGTH_ENRICHMENT = False
@@ -30,7 +30,7 @@ ALREADY_PU_2_1 = True # eight_knot.py & triangles.py & deform.py
 ALREADY_SIEGEL = False
 
 DO_STEREOGRAPHIC = True
-BASE_POINT_PROJECTION = np.array([C_DTYPE((1+1j)/2), C_DTYPE((1+1j)/2)])
+BASE_POINT_PROJECTION = np.array([C_DTYPE((1+1j)/2), C_DTYPE(-(1-1j)/2)])
 AUTOMATIC_STEREOGRAPHIC_BASE_POINT = False
 
 # Precision et cadre maximal pour le calcul des points
@@ -39,6 +39,7 @@ AUTOMATIC_STEREOGRAPHIC_BASE_POINT = False
 EPSILON = 1e-14
 DECIMALS_FILTER = 8
 ITERATIONS_NUMBER = 15
+FILTER_SHOW = False
 
 GLOBAL_PRECISION = 1e3 ** 2 # optimisation
 ACCUMULATED_INVERSE_PRECISION = 1e2 ** 2 # optimisation
