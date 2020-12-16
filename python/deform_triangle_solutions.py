@@ -33,13 +33,18 @@ class DeformTriangleSolution(object):
             grouphandler.RELATIONS = []
 
         grouphandler.GENERATORS = ['a','b','c']
-        grouphandler.RELATIONS = ['a'*3,'b'*3,'abC','c'*n]
+        grouphandler.RELATIONS = ['a'*3,'b'*3,'abC']
+        if n>0:
+            grouphandler.RELATIONS.append('c'*n)
         grouphandler.enhance_relations()
         grouphandler.enhance_generators()
 
     def define_dict(self):
 
-        z1 = 4*(np.cos(np.pi/self.n)**2) - 1
+        if self.n>0:
+            z1 = 4*(np.cos(np.pi/self.n)**2) - 1
+        else:
+            z1 = np.cdouble(3)
         z2 = self.parameter
         z3 = z1
         z4 = z2.conjugate()

@@ -499,7 +499,7 @@ def print_gnu(path_for_show, path_pics_name, path_ressources,
 
         if TILES_3D:
 
-            system('montage ' + name_outpic + '-*.jpeg -tile 3x1 -geometry 1050x1000 ' +
+            system('montage ' + name_outpic + '-*.jpeg -tile 3x1 -geometry 1500x1500 ' +
                     name_outpic + '.jpeg &> /dev/null')
             system('cp ' + name_outpic + '.jpeg'
                     + ' ' + path_pics_name+'.jpeg')
