@@ -73,7 +73,7 @@ class Interface(object):
         system('mkdir -p ' + path_ressources)
 
         if VERBOSE: print('Decompressing existing files.')
-        system('gzip --decompress ' + path_ressources + '*.gz &> /dev/null')
+        system('gzip --quiet --decompress ' + path_ressources + '*.gz')
 
         # Verifie que les calculs n'ont pas ete deja faits
         path_points = path_ressources + 'points'
@@ -499,8 +499,9 @@ def print_gnu(path_for_show, path_pics_name, path_ressources,
 
         if TILES_3D:
 
-            system('montage ' + name_outpic + '-*.jpeg -tile 3x1 -geometry 1500x1500 ' +
-                    name_outpic + '.jpeg') #BUG ac Linux : &> /dev/null')
+            system('montage -quiet ' + name_outpic
+                    + '-*.jpeg -tile 3x1 -geometry 1500x1500 ' +
+                    name_outpic + '.jpeg')
             system('cp ' + name_outpic + '.jpeg'
                     + ' ' + path_pics_name+'.jpeg')
             system('mv ' + name_outpic + '.jpeg'
