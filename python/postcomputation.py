@@ -144,7 +144,7 @@ def points_to_show_with_basis_transformation(set_points_enrich,
     if VERBOSE:
         print('PU(2,1) error measurement is: ' + str(pu_2_1_error))
 
-    if pu_2_1_error > 1e-8:
+    if pu_2_1_error > 1e-6:
         raise ValueError('PU(2,1) error mesurement is too high: '
                          + str(pu_2_1_error))
 
