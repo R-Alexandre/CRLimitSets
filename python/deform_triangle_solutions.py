@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import numpy as np
 import grouphandler
 
@@ -16,17 +15,18 @@ class DeformTriangleSolution(object):
         self.parameter = np.cdouble(parameter)
         self.n = n
 
-        #if not self.is_acceptable():
-            #raise AssertionError('Parameters not acceptable. Comment to force.')
-
+        self.parsymmetries = []
         self.symmetries = []
         self.elementary_symmetries = []
 
         self.dict = self.define_dict()
 
-        # 12^n ; 23^3 ; 31^3
+        self.symmetries_nps = self.symmetries[:]
+        self.elementary_symmetries_nps = self.elementary_symmetries[:]
 
-        # a = 12; b = 23; c = 31
+        self.symmetries_ps = (self.symmetries + self.parsymmetries)[:]
+        self.elementary_symmetries_ps = (self.elementary_symmetries
+                                        + self.parsymmetries)[:]
 
         if grouphandler.GENERATORS != []:
             grouphandler.GENERATORS = []
@@ -39,6 +39,14 @@ class DeformTriangleSolution(object):
         grouphandler.enhance_relations()
         grouphandler.enhance_generators()
 
+    def put_parsymmetries(self):
+        self.symmetries = self.symmetries_ps
+        self.elementary_symmetries = self.elementary_symmetries_ps
+
+    def forget_parsymmetries(self):
+        self.symmetries = self.symmetries_nps
+        self.elementary_symmetries = self.elementary_symmetries_nps
+
     def define_dict(self):
 
         if self.n>0:
@@ -48,6 +56,9 @@ class DeformTriangleSolution(object):
         z2 = self.parameter
         z3 = z1
         z4 = z2.conjugate()
+
+        if goldman_trace(z2) < -1e-10:
+            raise ValueError('Ab is elliptic.')
 
         Delta = ( z1*z1*z3*z3 - 2*z1*z2*z3*z4 + z2*z2*z4*z4
                 - 4*(z1*z1*z1 + z2*z2*z2 + z3*z3*z3 + z4*z4*z4)
@@ -123,7 +134,8 @@ class DeformTriangleSolution(object):
         m_a = np.dot(M,np.dot(m_a,m))
         m_b = np.dot(M,np.dot(m_b,m))
 
-        if  is_in_SU_2_1(m_a) > 1e-14 or is_in_SU_2_1(m_b) > 1e-14:
+        if  (is_in_SU_2_1(m_a) > 1e-14
+            or is_in_SU_2_1(m_b) > 1e-14):
             raise ValueError('H not conjugating in SU(2,1).')
 
         m_A = np.dot(m_a,m_a)
@@ -132,8 +144,8 @@ class DeformTriangleSolution(object):
         m_c = np.dot(m_a,m_b)
         m_C = np.dot(m_B,m_A)
 
-        M = np.dot(m_A,m_b) # 2123
-        if goldman_trace(np.trace(M)) < -1e-10:
+        m_p = np.dot(m_A,m_b) # 2123
+        if goldman_trace(np.trace(m_p)) < -1e-10:
             raise ValueError('Ab is elliptic.')
 
         x = m_c
@@ -142,7 +154,19 @@ class DeformTriangleSolution(object):
             x = np.dot(x,m_c)
             m_c_sym.append(x)
 
+        m_P = np.dot(m_B,m_a)
+
+        for i in range(3):
+            m_p = np.dot(m_p,m_p)
+            m_P = np.dot(m_P,m_P)
+            self.parsymmetries.append(m_p)
+            self.parsymmetries.append(m_P)
+            m_p = np.dot(m_p,m_p)
+            m_P = np.dot(m_P,m_P)
+
+
         symmetries = [m_a,m_b,m_A,m_B] + m_c_sym
+
         self.elementary_symmetries = symmetries[:]
         self.symmetries = symmetries[:]
 

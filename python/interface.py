@@ -9,7 +9,6 @@ import subprocess
 import time
 
 import numpy as np
-import snappy
 
 from parameters import *
 
@@ -22,11 +21,14 @@ import parsing
 class Interface(object):
     """docstring for Interface."""
 
-    def __init__(self, path):
+    def __init__(self, path, length_words = None,
+                             length_words_enrichment = None):
 
         self.path = path
+        self.only_points_result = False
+        self.length_words = LENGTH_WORDS
+        self.length_words_enrichment = LENGTH_WORDS_ENRICHMENT
 
-        computation.LENGTH_WORDS = LENGTH_WORDS
         computation.EPSILON = EPSILON
         computation.ITERATIONS_NUMBER = ITERATIONS_NUMBER
         computation.GLOBAL_PRECISION = GLOBAL_PRECISION
@@ -54,7 +56,8 @@ class Interface(object):
         parsing.C_DTYPE = C_DTYPE
 
     def representation_computation(self, solution, representation_name,
-                                             path_name=None):
+                                                   path_name = None,
+                                                   additional_points = None):
 
         global_time = time.time()
 
@@ -91,6 +94,8 @@ class Interface(object):
 
         # Necessite calcul des points
         if do_computation:
+
+            computation.LENGTH_WORDS = self.length_words
 
             if VERBOSE:
                 print('Points computation started.')
@@ -200,7 +205,7 @@ class Interface(object):
                 if length_words == 0:
                     do_enrichment = False
 
-            elif LENGTH_WORDS_ENRICHMENT == 0:
+            elif self.length_words_enrichment == 0:
                 do_enrichment = False
 
         if do_enrichment:
@@ -208,7 +213,7 @@ class Interface(object):
             if AUTOMATIC_LENGTH_ENRICHMENT:
                 computation.LENGTH_WORDS_ENRICHMENT = length_words
             else:
-                computation.LENGTH_WORDS_ENRICHMENT = LENGTH_WORDS_ENRICHMENT
+                computation.LENGTH_WORDS_ENRICHMENT = self.length_words_enrichment
 
             if VERBOSE: print('Enriching points with words of length '
                               + str(computation.LENGTH_WORDS_ENRICHMENT) + '.')
@@ -277,7 +282,21 @@ class Interface(object):
                           + ' : '
                           + str(time.time()-global_time))
 
+        if self.only_points_result:
+            return set_points_3d
+
         if do_show_computation:
+
+
+            if additional_points is None:
+                if VERBOSE:
+                    print('No additional point.')
+            else:
+                 if VERBOSE:
+                    print('Adding ' + str(len(additional_points))
+                                    + ' additional points')
+                 set_points_3d = np.concatenate([set_points_3d,
+                                                additional_points])
 
             if TRACE_PLOT:
 
