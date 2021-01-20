@@ -52,6 +52,7 @@ class Interface(object):
         postcomputation.VERBOSE = VERBOSE
         postcomputation.FILTER_SHOW = FILTER_SHOW
         postcomputation.DECIMALS_FILTER = DECIMALS_FILTER
+        postcomputation.FORCE = FORCE
 
         parsing.C_DTYPE = C_DTYPE
 

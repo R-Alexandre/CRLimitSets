@@ -24,7 +24,7 @@ APPLY_SYMMETRIES = True
 
 AUTOMATIC_LENGTH_ENRICHMENT = False
 NUMBER_POINTS = 1e6
-LENGTH_WORDS_ENRICHMENT = 4
+LENGTH_WORDS_ENRICHMENT = 3
 
 ALREADY_PU_2_1 = True # eight_knot.py & triangles.py & deform.py
 ALREADY_SIEGEL = False
@@ -40,6 +40,8 @@ EPSILON = 1e-14
 DECIMALS_FILTER = 8
 ITERATIONS_NUMBER = 15
 FILTER_SHOW = False
+
+FORCE = True # bypass PU(2,1) certification
 
 GLOBAL_PRECISION = 1e3 ** 2 # optimisation
 ACCUMULATED_INVERSE_PRECISION = 1e2 ** 2 # optimisation

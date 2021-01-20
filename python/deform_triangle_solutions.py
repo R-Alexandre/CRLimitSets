@@ -11,13 +11,18 @@ R_DTYPE = np.double
 class DeformTriangleSolution(object):
     """docstring for DeformTriangleSolution."""
 
-    def __init__(self, parameter, n=4):
-        self.parameter = np.cdouble(parameter)
+    def __init__(self, parameter, n = 4):
+
         self.n = n
+
+        self.parameter = np.cdouble(parameter)
 
         self.parsymmetries = []
         self.symmetries = []
         self.elementary_symmetries = []
+
+        self.m = []
+        self.M = []
 
         self.dict = self.define_dict()
 
@@ -50,20 +55,24 @@ class DeformTriangleSolution(object):
     def define_dict(self):
 
         if self.n>0:
-            z1 = 4*(np.cos(np.pi/self.n)**2) - 1
+            z1 = 4*(np.cos(np.pi/self.n)**2) - 1 # tr(c)
         else:
             z1 = np.cdouble(3)
+
         z2 = self.parameter
         z3 = z1
         z4 = z2.conjugate()
 
         if goldman_trace(z2) < -1e-10:
-            raise ValueError('Ab is elliptic.')
+            raise ValueError('Ab is elliptic. Goldman: ' + str(goldman_trace(z2)))
 
         Delta = ( z1*z1*z3*z3 - 2*z1*z2*z3*z4 + z2*z2*z4*z4
                 - 4*(z1*z1*z1 + z2*z2*z2 + z3*z3*z3 + z4*z4*z4)
                 + 18*(z1*z3 + z2*z4) - 27)
-        # Delta toujours réel
+        # Delta toujours réel, négatif pour SU(2,1)
+        if Delta.real > 1e-8:
+            raise ValueError('Not in SU(2,1).')
+
         delta = np.sqrt(np.cdouble(Delta.real))
 
         omega = np.exp(np.pi*2*1j/3)
@@ -129,14 +138,7 @@ class DeformTriangleSolution(object):
         if np.sign(H_tr) == np.sign(H_det):
             raise ValueError('Matrices not in SU(2,1).')
 
-        m,M = CR_basis_transform(H)
-
-        m_a = np.dot(M,np.dot(m_a,m))
-        m_b = np.dot(M,np.dot(m_b,m))
-
-        if  (is_in_SU_2_1(m_a) > 1e-14
-            or is_in_SU_2_1(m_b) > 1e-14):
-            raise ValueError('H not conjugating in SU(2,1).')
+        self.m,self.M = CR_basis_transform(H)
 
         m_A = np.dot(m_a,m_a)
         m_B = np.dot(m_b,m_b)
@@ -164,11 +166,14 @@ class DeformTriangleSolution(object):
             m_p = np.dot(m_p,m_p)
             m_P = np.dot(m_P,m_P)
 
+        self.parsymmetries = [np.dot(self.M,np.dot(matrix,self.m))
+                                      for matrix in self.parsymmetries]
 
         symmetries = [m_a,m_b,m_A,m_B] + m_c_sym
 
-        self.elementary_symmetries = symmetries[:]
-        self.symmetries = symmetries[:]
+        self.elementary_symmetries = [np.dot(self.M,np.dot(matrix,self.m))
+                                      for matrix in symmetries]
+        self.symmetries = self.elementary_symmetries[:]
 
         return { 'a' : m_a,
                  'b' : m_b,
@@ -186,7 +191,7 @@ class DeformTriangleSolution(object):
         for letter in word:
             matrix = np.dot(matrix, self.dict[letter])
 
-        return matrix
+        return np.dot(self.M,np.dot(matrix,self.m))
 
 def is_in_SU_2_1(matrix):
 
