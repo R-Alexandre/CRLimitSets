@@ -34,12 +34,15 @@ if len(arg)==7:
 if stay_parabolic:
     parabolic_enrich = True
 
-if insoluble_parabolic:
+if insoluble_parabolic and n!=0:
     X = np.cdouble(
     4*np.cos(np.pi/n)**2/(-8*np.cos(np.pi/n)**4 - 2*np.cos(np.pi/n)**2 + 2*np.sqrt(np.cdouble(16*np.cos(np.pi/n)**8 - 8*np.cos(np.pi/n)**6 - 7*np.cos(np.pi/n)**4 - 2*np.cos(np.pi/n)**2 + 1)) + 2)**(1/3) + (-8*np.cos(np.pi/n)**4 - 2*np.cos(np.pi/n)**2 + 2*np.sqrt(np.cdouble(16*np.cos(np.pi/n)**8 - 8*np.cos(np.pi/n)**6 - 7*np.cos(np.pi/n)**4 - 2*np.cos(np.pi/n)**2 + 1)) + 2)**(1/3) + 1
     ).real
     x = ((X*X -1 - 8*np.cos(np.pi/n)**2)/2).real
-    parameter = np.cdouble(x)
+    y = np.cdouble(
+    np.sqrt(16*np.cos(np.pi/n)**4 - 8*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1)*np.cos(np.pi/n)**2 - x*x - 8*np.cos(np.pi/n)**2 + 4*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1)*x - 12*x + 8*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1) - 8)
+    ).real
+    parameter = np.cdouble(x+y*1j)
 
 else:
     parameter = np.cdouble(3)
@@ -52,7 +55,7 @@ if stay_parabolic:
     y = np.sqrt(x * ( -x + 4*np.sqrt(2*x + 3) - 12) + 6*np.sqrt(2*x + 3) - 9)
     parameter = np.cdouble(x + y*1j)
 
-if stay_boundary or insoluble_parabolic:
+if stay_boundary and n!=0:
     x = parameter.real
     y = np.cdouble(
     np.sqrt(16*np.cos(np.pi/n)**4 - 8*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1)*np.cos(np.pi/n)**2 - x*x - 8*np.cos(np.pi/n)**2 + 4*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1)*x - 12*x + 8*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1) - 8)

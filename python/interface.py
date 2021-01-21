@@ -551,8 +551,8 @@ def print_gnu(path_for_show, path_pics_name, path_ressources,
                 + " ; outname=\'" + name_outpic + "\'"
                 +"\" python/script-gnupic.plg")
 
-        system('cp ' + name_outpic
+        system('cp ' + name_outpic + '.jpeg'
                 + ' ' + path_pics_name + '.jpeg')
 
-        system('mv ' + name_outpic
+        system('mv ' + name_outpic + '.jpeg'
               + ' ' + path_ressources)
