@@ -6,6 +6,7 @@ import grouphandler
 from numba import jit
 
 C_DTYPE = np.cdouble
+C_DTYPE_2 = np.clongdouble
 R_DTYPE = np.double
 
 class DeformTriangleSolution(object):
@@ -15,7 +16,7 @@ class DeformTriangleSolution(object):
 
         self.n = n
 
-        self.parameter = np.cdouble(parameter)
+        self.parameter = C_DTYPE_2(parameter)
 
         self.parsymmetries = []
         self.symmetries = []
@@ -55,11 +56,11 @@ class DeformTriangleSolution(object):
     def define_dict(self):
 
         if self.n>0:
-            z1 = 4*(np.cos(np.pi/self.n)**2) - 1 # tr(c)
+            z1 = 4*(np.cos(C_DTYPE_2(np.pi)/self.n)**2) - 1 # tr(c)
         else:
-            z1 = np.cdouble(3)
+            z1 = C_DTYPE_2(3)
 
-        z2 = self.parameter
+        z2 = C_DTYPE_2(self.parameter)
         z3 = z1
         z4 = z2.conjugate()
 
@@ -73,10 +74,10 @@ class DeformTriangleSolution(object):
         if Delta.real > 1e-8:
             raise ValueError('Not in SU(2,1).')
 
-        delta = np.sqrt(np.cdouble(Delta.real))
+        delta = np.sqrt(C_DTYPE_2(Delta.real))
 
-        omega = np.exp(np.pi*2*1j/3)
-        omega2 = np.exp(-np.pi*2*1j/3)
+        omega = np.exp(C_DTYPE_2(np.pi)*2*1j/3)
+        omega2 = np.exp(C_DTYPE_2(-np.pi)*2*1j/3)
 
         a = (
             (z1*z3 - z2*z4 + 6*omega*z1 + 6*omega2*z3 + 9 + delta) /
@@ -106,25 +107,25 @@ class DeformTriangleSolution(object):
             [omega , 0 , 0],
             [omega2 , 1 , 0],
             [b+a, 2*omega*a, omega2]
-        ],dtype=np.dtype(C_DTYPE))
+        ],dtype=np.dtype(C_DTYPE_2))
 
         m_b = np.array([
             [omega, 2*omega2*d, c+d],
             [0, 1, omega],
             [0, 0, omega2]
-        ],dtype=np.dtype(C_DTYPE))
+        ],dtype=np.dtype(C_DTYPE_2))
 
         # CR basis transformation
 
-        l2 = ( (np.sqrt(3)*(d.imag*c.real - c.imag*d.real) - d*d.conjugate())/3
-               + (np.sqrt(3) * (a+b+c+d).imag -3*(a+b-c).real - d.real)/4)
+        l2 = ( (np.sqrt(np.longdouble(3))*(d.imag*c.real - c.imag*d.real) - d*d.conjugate())/3
+               + (np.sqrt(np.longdouble(3)) * (a+b+c+d).imag -3*(a+b-c).real - d.real)/4)
 
-        u = -d*(np.sqrt(3)*1j - 1) / (np.sqrt(3)*1j + 3)
-        v = (c*np.sqrt(3)*1j + d)/6
-        w = -(3*l2*(-np.sqrt(3)*1j+1)
-              - (c*(np.sqrt(3)*1j+3)
-                 + d*(np.sqrt(3)*1j - 1)) *d.conjugate()
-              ) / ( 3*np.sqrt(3)*1j+9 )
+        u = -d*(np.sqrt(np.longdouble(3))*1j - 1) / (np.sqrt(np.longdouble(3))*1j + 3)
+        v = (c*np.sqrt(np.longdouble(3))*1j + d)/6
+        w = -(3*l2*(-np.sqrt(np.longdouble(3))*1j+1)
+              - (c*(np.sqrt(np.longdouble(3))*1j+3)
+                 + d*(np.sqrt(np.longdouble(3))*1j - 1)) *d.conjugate()
+              ) / ( 3*np.sqrt(np.longdouble(3))*1j+9 )
 
         H = np.array([
             [-1/2, u, v],
@@ -158,7 +159,7 @@ class DeformTriangleSolution(object):
 
         m_P = np.dot(m_B,m_a)
 
-        for i in range(3):
+        for i in range(5):
             m_p = np.dot(m_p,m_p)
             m_P = np.dot(m_P,m_P)
             self.parsymmetries.append(m_p)
@@ -166,12 +167,15 @@ class DeformTriangleSolution(object):
             m_p = np.dot(m_p,m_p)
             m_P = np.dot(m_P,m_P)
 
-        self.parsymmetries = [np.dot(self.M,np.dot(matrix,self.m))
+        self.parsymmetries = [np.array(np.dot(self.M,np.dot(matrix,self.m))
+                                       ,dtype=C_DTYPE)
                                       for matrix in self.parsymmetries]
 
         symmetries = [m_a,m_b,m_A,m_B] + m_c_sym
 
-        self.elementary_symmetries = [np.dot(self.M,np.dot(matrix,self.m))
+        self.elementary_symmetries = [np.array(np.dot(self.M,
+                                                      np.dot(matrix,self.m))
+                                              ,dtype=C_DTYPE)
                                       for matrix in symmetries]
         self.symmetries = self.elementary_symmetries[:]
 
@@ -184,18 +188,18 @@ class DeformTriangleSolution(object):
 
     def from_word_to_matrix(self, word):
 
-        matrix = np.identity(3,dtype=np.dtype(C_DTYPE))
+        matrix = np.identity(3,dtype=np.dtype(C_DTYPE_2))
         if word == '':
-            return matrix
+            return np.identity(3,dtype=np.dtype(C_DTYPE))
 
         for letter in word:
             matrix = np.dot(matrix, self.dict[letter])
 
-        return np.dot(self.M,np.dot(matrix,self.m))
+        return np.array(np.dot(self.M,np.dot(matrix,self.m)),dtype=C_DTYPE)
 
 def is_in_SU_2_1(matrix):
 
-    J = np.array([[1,0,0],[0,1,0],[0,0,-1]],dtype=np.dtype(C_DTYPE))
+    J = np.array([[1,0,0],[0,1,0],[0,0,-1]],dtype=np.dtype(C_DTYPE_2))
     error_estimation = np.dot(matrix.conjugate().transpose(),
                               np.dot(J,matrix)) - J
     max_error = R_DTYPE(0)

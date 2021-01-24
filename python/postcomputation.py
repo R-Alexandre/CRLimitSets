@@ -12,7 +12,9 @@ import numba
 DEBUG = False
 
 VERBOSE = None
+
 FORCE = None
+PU_2_1_PRECISION = None
 
 FRAME_SHOW = None
 DECIMALS_FILTER = None
@@ -44,7 +46,7 @@ def norm1(x):
 
 @jit(nopython=True, cache=True)
 def siegel_projection(stack, set_points_enrich):
-
+# |y|^2 = 2Re(x) ; -> (y,x.imag)
     for i in range(len(set_points_enrich)):
 
         x_point = set_points_enrich[i]
@@ -146,9 +148,8 @@ def points_to_show_with_basis_transformation(set_points_enrich,
     if VERBOSE:
         print('PU(2,1) error measurement is: ' + str(pu_2_1_error))
 
-    if not FORCE and pu_2_1_error > 1e-6:
-        raise ValueError('PU(2,1) error mesurement is too high: '
-                         + str(pu_2_1_error))
+    if not FORCE:
+        set_points = PU_2_1_certification(set_points)
 
     t = time()
 
@@ -249,7 +250,7 @@ def compute_points_for_show(set_points_3d,
 
     basis_transformation = np.identity(3,dtype=np.dtype(C_DTYPE))
 
-    if is_PU_2_1(set_points_3d) < 1e-6:
+    if is_PU_2_1(set_points_3d) < PU_2_1_PRECISION:
 
         if VERBOSE : print('Already in PU(2,1) nice basis.')
 
@@ -263,7 +264,7 @@ def compute_points_for_show(set_points_3d,
         siegel_set = np.dot(siegel,
                             set_points_3d.transpose()).transpose()
 
-        if is_PU_2_1(siegel_set) < 1e-6:
+        if is_PU_2_1(siegel_set) < PU_2_1_PRECISION:
 
             if VERBOSE : print('In Siegel basis.')
             basis_transformation = siegel
@@ -470,9 +471,11 @@ def solve_hermitian_equation_parameters(set_points):
 
 @jit(nopython=True, cache=True)
 def is_PU_2_1(set_points):
-
+# Measure the error of the dataset from being fully in the
+# CR sphere. Measures in infty-norm.
     max = R_DTYPE(0.)
     for i in range(len(set_points)):
+
         point = set_points[i]
         norm = np.abs(point[0])**2 + np.abs(point[1])**2 - np.abs(point[2])**2
         norm = np.abs(norm)
@@ -480,3 +483,33 @@ def is_PU_2_1(set_points):
             max = norm
 
     return max
+
+def PU_2_1_certification(set_points):
+
+    pu_2_1_error = is_PU_2_1(set_points)
+
+    if pu_2_1_error > PU_2_1_PRECISION:
+
+        print('PU(2,1) error mesurement is too high: '
+                         + str(pu_2_1_error) + ' ... cherry picking')
+        (set_points,m) = cherry_picking_PU_2_1(set_points)
+        print('... removed ' + str((len(set_points)-m)/(1.*len(set_points)))
+                             + '% of the points.')
+        set_points = set_points[:m]
+        return set_points[:]
+
+@jit(nopython=True, cache=True)
+def cherry_picking_PU_2_1(set_points):
+# cherry picks the point so that is_PU_2_1() is in bounds
+    m = 0
+    for i in range(len(set_points)):
+
+        point = set_points[i]
+        norm = np.abs(point[0])**2 + np.abs(point[1])**2 - np.abs(point[2])**2
+        norm = np.abs(norm)
+
+        if norm < PU_2_1_PRECISION:
+            set_points[m] = point
+            m += 1
+
+    return (set_points,m)

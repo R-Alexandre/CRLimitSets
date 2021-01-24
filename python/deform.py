@@ -5,13 +5,12 @@ import sys
 from os import system
 import interface
 import numpy as np
+from time import time
 
 import deform_triangle_solutions
 
-from postcomputation import is_PU_2_1
-from time import time
-
-R_DTYPE = np.longdouble
+import postcomputation
+postcomputation.PU_2_1_PRECISION = 1e-6
 
 arg = sys.argv;
 scale = 50
@@ -35,32 +34,32 @@ if stay_parabolic:
     parabolic_enrich = True
 
 if insoluble_parabolic and n!=0:
-    X = np.cdouble(
-    4*np.cos(np.pi/n)**2/(-8*np.cos(np.pi/n)**4 - 2*np.cos(np.pi/n)**2 + 2*np.sqrt(np.cdouble(16*np.cos(np.pi/n)**8 - 8*np.cos(np.pi/n)**6 - 7*np.cos(np.pi/n)**4 - 2*np.cos(np.pi/n)**2 + 1)) + 2)**(1/3) + (-8*np.cos(np.pi/n)**4 - 2*np.cos(np.pi/n)**2 + 2*np.sqrt(np.cdouble(16*np.cos(np.pi/n)**8 - 8*np.cos(np.pi/n)**6 - 7*np.cos(np.pi/n)**4 - 2*np.cos(np.pi/n)**2 + 1)) + 2)**(1/3) + 1
+    X = np.clongdouble(
+    4*np.cos(np.longdouble(np.pi)/n)**2/(-8*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 2*np.sqrt(np.clongdouble(16*np.cos(np.longdouble(np.pi)/n)**8 - 8*np.cos(np.longdouble(np.pi)/n)**6 - 7*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 1)) + 2)**(1/3) + (-8*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 2*np.sqrt(np.clongdouble(16*np.cos(np.longdouble(np.pi)/n)**8 - 8*np.cos(np.longdouble(np.pi)/n)**6 - 7*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 1)) + 2)**(1/3) + 1
     ).real
-    x = ((X*X -1 - 8*np.cos(np.pi/n)**2)/2).real
-    y = np.cdouble(
-    np.sqrt(16*np.cos(np.pi/n)**4 - 8*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1)*np.cos(np.pi/n)**2 - x*x - 8*np.cos(np.pi/n)**2 + 4*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1)*x - 12*x + 8*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1) - 8)
+    x = ((X*X -1 - 8*np.cos(np.longdouble(np.pi)/n)**2)/2).real
+    y = np.clongdouble(
+    np.sqrt(16*np.cos(np.longdouble(np.pi)/n)**4 - 8*np.sqrt(8*np.cos(np.longdouble(np.pi)/n)**2 + 2*x + 1)*np.cos(np.longdouble(np.pi)/n)**2 - x*x - 8*np.cos(np.longdouble(np.pi)/n)**2 + 4*np.sqrt(8*np.cos(np.longdouble(np.pi)/n)**2 + 2*x + 1)*x - 12*x + 8*np.sqrt(8*np.cos(np.longdouble(np.pi)/n)**2 + 2*x + 1) - 8)
     ).real
-    parameter = np.cdouble(x+y*1j)
+    parameter = np.clongdouble(x+y*1j)
 
 else:
-    parameter = np.cdouble(3)
+    parameter = np.clongdouble(3)
 
 if len(arg)>=3:
-    parameter += np.cdouble((int(arg[2]) + 1.j*int(arg[3])) / scale)
+    parameter += np.clongdouble((int(arg[2]) + 1.j*int(arg[3])) / scale)
 
 if stay_parabolic:
-    x = parameter.real
+    x = np.longdouble(parameter.real)
     y = np.sqrt(x * ( -x + 4*np.sqrt(2*x + 3) - 12) + 6*np.sqrt(2*x + 3) - 9)
-    parameter = np.cdouble(x + y*1j)
+    parameter = np.clongdouble(x + y*1j)
 
 if stay_boundary and n!=0:
     x = parameter.real
-    y = np.cdouble(
-    np.sqrt(16*np.cos(np.pi/n)**4 - 8*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1)*np.cos(np.pi/n)**2 - x*x - 8*np.cos(np.pi/n)**2 + 4*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1)*x - 12*x + 8*np.sqrt(8*np.cos(np.pi/n)**2 + 2*x + 1) - 8)
+    y = np.clongdouble(
+    np.sqrt(16*np.cos(np.longdouble(np.pi)/n)**4 - 8*np.sqrt(8*np.cos(np.longdouble(np.pi)/n)**2 + 2*x + 1)*np.cos(np.longdouble(np.pi)/n)**2 - x*x - 8*np.cos(np.longdouble(np.pi)/n)**2 + 4*np.sqrt(8*np.cos(np.longdouble(np.pi)/n)**2 + 2*x + 1)*x - 12*x + 8*np.sqrt(8*np.cos(np.longdouble(np.pi)/n)**2 + 2*x + 1) - 8)
     ).real
-    parameter = np.cdouble(x+y*1j)
+    parameter = np.clongdouble(x+y*1j)
 
 triangle_name = str(n)
 
@@ -72,7 +71,7 @@ complement_name = (np.format_float_positional(parameter.real, unique=False,
                                    precision=3, fractional=True, trim='k'))
 
 
-name = complement_name #triangle_name + '_' + complement_name
+name = triangle_name + '_' + complement_name
 
 path_name = triangle_name + '/' + complement_name
 
@@ -96,16 +95,12 @@ else:
     solution.put_parsymmetries()
     interf.only_points_result = True
     interf.length_words = 4
-    interf.length_words_enrichment = 1
+    interf.length_words_enrichment = 4
     points_para = interf.representation_computation(solution, name, path_name)
 
     print('Duration of computation of additional points: ' + str(time()-cap_time))
 
-    error_measure = is_PU_2_1(points_para)
-    if error_measure > 1e-6:
-        print('Additional points too imprecise, forgetting. Error measure: '
-              + str(error_measure))
-        points_para = None
+    points_para = postcomputation.PU_2_1_certification(points_para)
 
     solution.forget_parsymmetries()
     interf.only_points_result = False

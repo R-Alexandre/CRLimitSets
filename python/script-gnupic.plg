@@ -14,5 +14,5 @@ unset ytics
 ang = 5
 
 set output sprintf("%s.jpeg", outname)
-set view 85,ang,2,1
+set view 85,ang,1.5,1
 splot filename notitle with points pt 7 ps 0.25 lc rgb 'black'

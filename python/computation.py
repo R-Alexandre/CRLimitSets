@@ -85,7 +85,7 @@ def iterate(matrix):
         goldman_trace = (z2 + 18) * z2 - 8*((z*z*z).real) - 27
 
     if goldman_trace < 1e-10:
-        # 1e-10 better but problematic for m055 and m082 
+        # 1e-10 better but problematic for m055 and m082
 
         return (False,point)
 

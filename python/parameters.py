@@ -13,18 +13,18 @@ R_DTYPE = np.double
 TRACE_PLOT = False
 COMPRESSION = False
 CLEAN_RDIR = True
-VERBOSE = False
+VERBOSE = True
 
 DO_GNU_PLOT = True
 GNU_3PLANES = True
 TILES_3D = True
 
-LENGTH_WORDS = 8 # optimal with even numbers
+LENGTH_WORDS = 12 # optimal with even numbers
 APPLY_SYMMETRIES = True
 
 AUTOMATIC_LENGTH_ENRICHMENT = False
 NUMBER_POINTS = 1e6
-LENGTH_WORDS_ENRICHMENT = 3
+LENGTH_WORDS_ENRICHMENT = 4
 
 ALREADY_PU_2_1 = True # eight_knot.py & triangles.py & deform.py
 ALREADY_SIEGEL = False
@@ -41,7 +41,8 @@ DECIMALS_FILTER = 8
 ITERATIONS_NUMBER = 15
 FILTER_SHOW = False
 
-FORCE = True # bypass PU(2,1) certification
+PU_2_1_PRECISION = 1e-6
+FORCE = False # bypass PU(2,1) certification
 
 GLOBAL_PRECISION = 1e3 ** 2 # optimisation
 ACCUMULATED_INVERSE_PRECISION = 1e2 ** 2 # optimisation
