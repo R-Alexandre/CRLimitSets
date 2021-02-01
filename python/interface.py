@@ -285,6 +285,7 @@ class Interface(object):
                           + str(time.time()-global_time))
 
         if self.only_points_result:
+            system('rm -r ' + path_ressources)
             return set_points_3d
 
         if do_show_computation:
