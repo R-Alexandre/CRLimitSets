@@ -30,9 +30,6 @@ if len(arg)==7:
     stay_boundary = (int(arg[5])==1)
     insoluble_parabolic = (int(arg[6])==1)
 
-if stay_parabolic:
-    parabolic_enrich = True
-
 if insoluble_parabolic and n!=0:
     X = np.clongdouble(
     4*np.cos(np.longdouble(np.pi)/n)**2/(-8*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 2*np.sqrt(np.clongdouble(16*np.cos(np.longdouble(np.pi)/n)**8 - 8*np.cos(np.longdouble(np.pi)/n)**6 - 7*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 1)) + 2)**(1/3) + (-8*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 2*np.sqrt(np.clongdouble(16*np.cos(np.longdouble(np.pi)/n)**8 - 8*np.cos(np.longdouble(np.pi)/n)**6 - 7*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 1)) + 2)**(1/3) + 1
@@ -94,8 +91,8 @@ else:
     cap_time = time()
     solution.put_parsymmetries()
     interf.only_points_result = True
-    interf.length_words = 4
-    interf.length_words_enrichment = 4
+    interf.length_words = 5
+    interf.length_words_enrichment = 5
     points_para = interf.representation_computation(solution, name, path_name)
 
     print('Duration of computation of additional points: ' + str(time()-cap_time))

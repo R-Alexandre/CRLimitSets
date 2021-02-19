@@ -170,9 +170,15 @@ def points_to_show_with_basis_transformation(set_points_enrich,
     if VERBOSE : print('Projecting.')
 
     if DO_STEREOGRAPHIC:
-        base_point = (BASE_POINT_PROJECTION
-                  if not AUTOMATIC_STEREOGRAPHIC_BASE_POINT
-                  else base_point_stereographic_projection(set_points_enrich))
+        base_point = None
+        if not AUTOMATIC_STEREOGRAPHIC_BASE_POINT:
+            base_point = BASE_POINT_PROJECTION
+            if ( np.abs(np.abs(base_point[0]**2) + np.abs(base_point[1]**2)
+                        -1) > 1e-10):
+                base_point /= np.sqrt(np.abs(base_point[0]**2)
+                                     + np.abs(base_point[1]**2))
+        else:
+            base_point = base_point_stereographic_projection(set_points_enrich)
 
         stack = stereographic_projection(stack, set_points_enrich, base_point)
 

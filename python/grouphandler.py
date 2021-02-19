@@ -87,7 +87,7 @@ def comprehensive_list_words_length(n):
         return GENERATORS[:]
 
     if n%2  == 0:
-        intermed_list = comprehensive_list_words_length(n/2)
+        intermed_list = comprehensive_list_words_length(int(n/2))
 
         list = []
         for a in intermed_list:
@@ -99,8 +99,8 @@ def comprehensive_list_words_length(n):
         return list
 
     if n%2 == 1:
-        intermed_list_a = comprehensive_list_words_length((n+1)/2)
-        intermed_list_b = comprehensive_list_words_length((n-1)/2)
+        intermed_list_a = comprehensive_list_words_length(int((n+1)/2))
+        intermed_list_b = comprehensive_list_words_length(int((n-1)/2))
 
         list = []
         for a in intermed_list_a:
@@ -109,3 +109,14 @@ def comprehensive_list_words_length(n):
                 if no_relation_contained(word):
                     list.append(word)
         return list
+
+
+def lists_forming_words_length_full(n):
+        list = comprehensive_list_words_length_full(n)
+        return ([''],list)
+
+def comprehensive_list_words_length_full(n):
+    list = []
+    for j in range(n):
+        list = list+comprehensive_list_words_length(j+1)
+    return list

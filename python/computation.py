@@ -15,6 +15,7 @@ VERBOSE = None
 
 LENGTH_WORDS = None
 LENGTH_WORDS_ENRICHMENT = None
+EXPERIMENTAL_ENRICHMENT = None
 
 EPSILON = None
 ITERATIONS_NUMBER = None
@@ -275,11 +276,11 @@ def enrich_point(point, list_a, list_b, stack, l):
 
     for i in range(len(list_a)):
 
-        point_it = np.dot(list_a[i],point)
+        point_it_a = np.dot(list_a[i],point)
 
         for j in range(l):
 
-            point_it = np.dot(list_b[j],point_it)
+            point_it = np.dot(list_b[j],point_it_a)
 
             if (abs2(point_it) < GLOBAL_PRECISION).all():
 
@@ -299,7 +300,12 @@ def enrichissement(set_points, path_points_enriched, solution):
 
     """
 
-    lists_words = lists_forming_words_length(LENGTH_WORDS_ENRICHMENT)
+    lists_words = []
+    if EXPERIMENTAL_ENRICHMENT:
+        lists_words = lists_forming_words_length_full(LENGTH_WORDS_ENRICHMENT)
+    else:
+        lists_words = lists_forming_words_length(LENGTH_WORDS_ENRICHMENT)
+
 
     list_a = np.array([solution.from_word_to_matrix(a)
                        for a in lists_words[0]])

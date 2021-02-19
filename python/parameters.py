@@ -19,18 +19,21 @@ DO_GNU_PLOT = True
 GNU_3PLANES = True
 TILES_3D = True
 
-LENGTH_WORDS = 12 # optimal with even numbers
+LENGTH_WORDS = 6 # optimal with even numbers
 APPLY_SYMMETRIES = True
 
 AUTOMATIC_LENGTH_ENRICHMENT = False
-NUMBER_POINTS = 1e6
-LENGTH_WORDS_ENRICHMENT = 4
+NUMBER_POINTS = 1e7
+LENGTH_WORDS_ENRICHMENT = 3
+EXPERIMENTAL_ENRICHMENT = False
 
 ALREADY_PU_2_1 = True # eight_knot.py & triangles.py & deform.py
 ALREADY_SIEGEL = False
 
 DO_STEREOGRAPHIC = True
-BASE_POINT_PROJECTION = np.array([C_DTYPE((1+1j)/2), C_DTYPE(-(1-1j)/2)])
+BASE_POINT_PROJECTION = np.array([C_DTYPE(( 1 +1j)/2)
+                                , C_DTYPE((-1 +1j)/2)])
+# base_point auto-normalized : only need direction
 AUTOMATIC_STEREOGRAPHIC_BASE_POINT = False
 
 # Precision et cadre maximal pour le calcul des points

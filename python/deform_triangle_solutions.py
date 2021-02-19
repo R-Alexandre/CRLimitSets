@@ -151,6 +151,10 @@ class DeformTriangleSolution(object):
         if goldman_trace(np.trace(m_p)) < -1e-10:
             raise ValueError('Ab is elliptic.')
 
+        m_com = np.dot(m_a,np.dot(m_b,np.dot(m_A,m_B)))
+        if goldman_trace(np.trace(m_com)) < -1e-10:
+            raise ValueError('[a,b] is elliptic.')
+
         x = m_c
         m_c_sym=[x]
         for i in range(self.n-2):
