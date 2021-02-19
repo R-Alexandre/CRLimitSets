@@ -39,7 +39,8 @@ class Interface(object):
         computation.FMT = FMT
         computation.VERBOSE = VERBOSE
         computation.DECIMALS_FILTER = DECIMALS_FILTER
-
+        computation.LIGHT_RAM = LIGHT_RAM
+        
         postcomputation.FRAME_SHOW = FRAME_SHOW
         postcomputation.DO_STEREOGRAPHIC = DO_STEREOGRAPHIC
         postcomputation.BASE_POINT_PROJECTION = BASE_POINT_PROJECTION

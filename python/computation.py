@@ -12,6 +12,7 @@ import numba
 from numba import jit
 
 VERBOSE = None
+LIGHT_RAM = None
 
 LENGTH_WORDS = None
 LENGTH_WORDS_ENRICHMENT = None
@@ -331,9 +332,6 @@ def enrichissement(set_points, path_points_enriched, solution):
 
         stack,m = enrich_point(point, list_a, list_b, stack, len(list_b))
 
-        stack_ram[index_stack_ram:index_stack_ram+m] = stack[:m]
-        index_stack_ram += m
-
         produced += m
 
         if VERBOSE:
@@ -345,18 +343,29 @@ def enrichissement(set_points, path_points_enriched, solution):
                 system("date \"+Time: %H:%M:%S\"")
                 last_percent = percent
 
+        if LIGHT_RAM:
+            stack_srt = np.empty([m,3], dtype=np.dtype(C_DTYPE))
+            nei, index = np.unique(stack[:m].round(decimals=DECIMALS_FILTER),
+                                   axis=0,return_index=True)
+            stack_srt = stack[index]
+            n_m = len(stack_srt)
+
+            stack_ram[index_stack_ram:index_stack_ram+n_m] = stack_srt[:]
+            index_stack_ram += n_m
+
+        else:
+            stack_ram[index_stack_ram:index_stack_ram+m] = stack[:m]
+            index_stack_ram += m
+
+
     if VERBOSE:
+        produced = index_stack_ram
         print(time() - T)
-        print('Now sorting')
-        T = time()
+        print('Has ' + str(produced) + ' points, sorting...')
 
     stack_ram.resize((index_stack_ram,3))
     nei, index = np.unique(stack_ram.round(decimals=DECIMALS_FILTER),
                            axis=0,return_index=True)
     stack_ram = stack_ram[index]
-
-    if VERBOSE:
-        print(time() - T)
-        print('Has now ' + str(produced) + ' points.')
 
     return stack_ram

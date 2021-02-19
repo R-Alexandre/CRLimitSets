@@ -14,12 +14,13 @@ TRACE_PLOT = False
 COMPRESSION = False
 CLEAN_RDIR = True
 VERBOSE = True
+LIGHT_RAM = True
 
 DO_GNU_PLOT = True
 GNU_3PLANES = True
 TILES_3D = False
 
-LENGTH_WORDS = 10 # optimal with even numbers
+LENGTH_WORDS = 8 # optimal with even numbers
 APPLY_SYMMETRIES = True
 
 AUTOMATIC_LENGTH_ENRICHMENT = False
