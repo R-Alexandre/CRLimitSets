@@ -109,14 +109,3 @@ def comprehensive_list_words_length(n):
                 if no_relation_contained(word):
                     list.append(word)
         return list
-
-
-def lists_forming_words_length_full(n):
-        list = comprehensive_list_words_length_full(n)
-        return ([''],list)
-
-def comprehensive_list_words_length_full(n):
-    list = []
-    for j in range(n):
-        list = list+comprehensive_list_words_length(j+1)
-    return list

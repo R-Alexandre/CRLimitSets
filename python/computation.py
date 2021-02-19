@@ -15,7 +15,6 @@ VERBOSE = None
 
 LENGTH_WORDS = None
 LENGTH_WORDS_ENRICHMENT = None
-EXPERIMENTAL_ENRICHMENT = None
 
 EPSILON = None
 ITERATIONS_NUMBER = None
@@ -300,11 +299,7 @@ def enrichissement(set_points, path_points_enriched, solution):
 
     """
 
-    lists_words = []
-    if EXPERIMENTAL_ENRICHMENT:
-        lists_words = lists_forming_words_length_full(LENGTH_WORDS_ENRICHMENT)
-    else:
-        lists_words = lists_forming_words_length(LENGTH_WORDS_ENRICHMENT)
+    lists_words = lists_forming_words_length(LENGTH_WORDS_ENRICHMENT)
 
 
     list_a = np.array([solution.from_word_to_matrix(a)
