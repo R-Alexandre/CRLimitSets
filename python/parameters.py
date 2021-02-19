@@ -19,12 +19,12 @@ DO_GNU_PLOT = True
 GNU_3PLANES = True
 TILES_3D = False
 
-LENGTH_WORDS = 3 # optimal with even numbers
+LENGTH_WORDS = 10 # optimal with even numbers
 APPLY_SYMMETRIES = True
 
 AUTOMATIC_LENGTH_ENRICHMENT = False
 NUMBER_POINTS = 1e7
-LENGTH_WORDS_ENRICHMENT = 9
+LENGTH_WORDS_ENRICHMENT = 3
 
 ALREADY_PU_2_1 = True # eight_knot.py & triangles.py & deform.py
 ALREADY_SIEGEL = False
