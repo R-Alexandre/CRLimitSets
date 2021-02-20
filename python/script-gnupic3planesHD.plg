@@ -1,0 +1,30 @@
+set term jpeg medium size 6000,6000
+
+set ticslevel 0
+set view equal xyz
+
+set origin 0.,0.
+set size 1,1
+
+rph_scale = 1.6
+
+unset xtics
+unset ztics
+unset ytics
+unset border
+
+
+set view 0,0,rph_scale,1
+set output sprintf("%s-xy.jpeg", outname)
+
+splot filename notitle with points pt 7 ps 0.25 lc rgb 'black'
+
+set view 90,0,rph_scale,1
+set output sprintf("%s-xz.jpeg", outname)
+
+replot
+
+set view 90,90,rph_scale,1
+set output sprintf("%s-yz.jpeg", outname)
+
+replot

@@ -268,6 +268,27 @@ def light_symmetrize(set_points, symmetries, stack):
 
     return (stack,m)
 
+@jit(nopython=True, cache=True, nogil=True)
+def single_symmetrize(set_points, symmetry, stack):
+
+    m = 0
+
+    for i in range(len(set_points)):
+
+        point = np.dot(symmetry,set_points[i])
+
+        if (abs2(point) < GLOBAL_PRECISION).all():
+
+            z_abs2 = abs2(point[2])
+
+            if z_abs2 != 0 and (z_abs2 < ENRICH_PRECISION
+                and 1./z_abs2 < ENRICH_PRECISION):
+
+                stack[m] = point / point[2]
+                m += 1
+
+    return (stack,m)
+
 
 @jit(nopython=True, cache=True, nogil=True)
 def enrich_point(point, list_a, list_b, stack, l):
@@ -324,7 +345,11 @@ def enrichissement(set_points, path_points_enriched, solution):
     T = time()
 
     produced = 0
-    stack_ram = np.empty([n+len(set_points),3], dtype=np.dtype(C_DTYPE))
+    stack_ram = []
+    if not LIGHT_RAM:
+        stack_ram = np.empty([n+len(set_points),3], dtype=np.dtype(C_DTYPE))
+    else:
+        stack_ram = np.empty([len(set_points),3], dtype=np.dtype(C_DTYPE))
     stack_ram[:len(set_points)] = set_points
     index_stack_ram = len(set_points)
 
@@ -350,6 +375,7 @@ def enrichissement(set_points, path_points_enriched, solution):
             stack_srt = stack[index]
             n_m = len(stack_srt)
 
+            stack_ram.resize((index_stack_ram+n_m,3))
             stack_ram[index_stack_ram:index_stack_ram+n_m] = stack_srt[:]
             index_stack_ram += n_m
 

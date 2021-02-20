@@ -18,6 +18,7 @@ LIGHT_RAM = True
 
 DO_GNU_PLOT = True
 GNU_3PLANES = True
+HD_GNU_3PLANES = True
 TILES_3D = False
 
 LENGTH_WORDS = 8 # optimal with even numbers

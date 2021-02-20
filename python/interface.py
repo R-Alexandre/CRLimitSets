@@ -40,7 +40,7 @@ class Interface(object):
         computation.VERBOSE = VERBOSE
         computation.DECIMALS_FILTER = DECIMALS_FILTER
         computation.LIGHT_RAM = LIGHT_RAM
-        
+
         postcomputation.FRAME_SHOW = FRAME_SHOW
         postcomputation.DO_STEREOGRAPHIC = DO_STEREOGRAPHIC
         postcomputation.BASE_POINT_PROJECTION = BASE_POINT_PROJECTION
@@ -245,18 +245,46 @@ class Interface(object):
                 T = time.time()
 
                 symmetries = solution.symmetries
-                stack = np.empty([ len(symmetries) * len(set_points_3d),3]
-                                 ,dtype=np.dtype(C_DTYPE))
 
-                stack,m = computation.light_symmetrize(set_points_3d,
-                                                       symmetries,
-                                                       stack)
+                if not LIGHT_RAM:
+                    stack = np.empty([ len(symmetries) * len(set_points_3d),3]
+                                     ,dtype=np.dtype(C_DTYPE))
 
-                stack_ram = np.empty([len(set_points_3d)+m,3]
-                                      ,dtype=np.dtype(C_DTYPE))
+                    stack,m = computation.light_symmetrize(set_points_3d,
+                                                           symmetries,
+                                                           stack)
 
-                stack_ram[:len(set_points_3d)] = set_points_3d
-                stack_ram[len(set_points_3d):len(set_points_3d)+m]=stack[:m]
+                    stack_ram = np.empty([len(set_points_3d)+m,3]
+                                          ,dtype=np.dtype(C_DTYPE))
+
+                    stack_ram[:len(set_points_3d)] = set_points_3d
+                    stack_ram[len(set_points_3d):len(set_points_3d)+m]=stack[:m]
+
+                    del stack
+
+                else:
+
+                    stack_ram = np.empty([len(set_points_3d),3]
+                                     ,dtype=np.dtype(C_DTYPE))
+                    stack_ram[:len(set_points_3d)] = set_points_3d
+
+                    stack_short = np.empty([len(set_points_3d),3]
+                                     ,dtype=np.dtype(C_DTYPE))
+
+                    for symmetry in symmetries:
+                        stack_short,m = computation.single_symmetrize(set_points_3d,
+                                                                      symmetry,
+                                                                      stack_short)
+                        stack = stack_short[:m]
+                        nei, index = np.unique(stack.round(decimals=DECIMALS_FILTER),
+                                               axis=0,return_index=True)
+                        stack = stack[index]
+
+                        stack_ram.resize((len(stack_ram)+len(stack),3))
+                        stack_ram[len(stack_ram)-len(stack):len(stack_ram)]=stack[:]
+
+                    del stack_short
+                    del stack
 
                 if VERBOSE:
                     print(time.time()-T)
@@ -278,7 +306,6 @@ class Interface(object):
                 if VERBOSE: print(time.time() - w)
 
                 del stack_ram
-                del stack
 
         if VERBOSE: print('Duration of computation '
                           + representation_name
@@ -514,10 +541,15 @@ def print_gnu(path_for_show, path_pics_name, path_ressources,
 
     if GNU_3PLANES:
 
+        source_gnu = 'python/script-gnupic3planes.plg'
+        if HD_GNU_3PLANES:
+            source_gnu = 'python/script-gnupic3planesHD.plg'
+
+
         system("gnuplot -e "
                 + " \"filename=\'" + path_for_show + "\'"
                 + " ; outname=\'" + name_outpic + "\'"
-                +"\" python/script-gnupic3planes.plg")
+                +"\" " + source_gnu)
 
 
         if TILES_3D:
