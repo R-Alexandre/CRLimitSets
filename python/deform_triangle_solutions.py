@@ -19,6 +19,7 @@ class DeformTriangleSolution(object):
         self.parameter = C_DTYPE_2(parameter)
 
         self.parsymmetries = []
+        self.parlagsymmetries = []
         self.symmetries = []
         self.elementary_symmetries = []
 
@@ -34,6 +35,10 @@ class DeformTriangleSolution(object):
         self.elementary_symmetries_ps = (self.elementary_symmetries
                                         + self.parsymmetries)[:]
 
+        self.symmetries_pls = (self.symmetries + self.parlagsymmetries)[:]
+        self.elementary_symmetries_pls = (self.elementary_symmetries
+                                        + self.parlagsymmetries)[:]
+
         if grouphandler.GENERATORS != []:
             grouphandler.GENERATORS = []
             grouphandler.RELATIONS = []
@@ -45,9 +50,17 @@ class DeformTriangleSolution(object):
         grouphandler.enhance_relations()
         grouphandler.enhance_generators()
 
-    def put_parsymmetries(self):
-        self.symmetries = self.symmetries_ps
-        self.elementary_symmetries = self.elementary_symmetries_ps
+    def put_parsymmetries(self, parabolic, parabolic_lagragian):
+
+        if parabolic:
+            self.symmetries = self.symmetries_ps
+            self.elementary_symmetries = self.elementary_symmetries_ps
+
+        elif parabolic_lagragian:
+            self.symmetries = self.symmetries_pls
+            self.elementary_symmetries = self.elementary_symmetries_pls
+
+        else: print('Did not add any additionnal symmetry.')
 
     def forget_parsymmetries(self):
         self.symmetries = self.symmetries_nps
@@ -161,6 +174,7 @@ class DeformTriangleSolution(object):
             x = np.dot(x,m_c)
             m_c_sym.append(x)
 
+        # parabolic symmetries
         m_P = np.dot(m_B,m_a)
 
         for i in range(5):
@@ -174,6 +188,23 @@ class DeformTriangleSolution(object):
         self.parsymmetries = [np.array(np.dot(self.M,np.dot(matrix,self.m))
                                        ,dtype=C_DTYPE)
                                       for matrix in self.parsymmetries]
+
+        # parabolic lagrangian symmetries
+        m_P = np.dot(m_b,np.dot(m_a,np.dot(m_B,m_A)))
+        m_p = m_com
+
+        for i in range(5):
+            m_p = np.dot(m_p,m_p)
+            m_P = np.dot(m_P,m_P)
+            self.parlagsymmetries.append(m_p)
+            self.parlagsymmetries.append(m_P)
+            m_p = np.dot(m_p,m_p)
+            m_P = np.dot(m_P,m_P)
+
+        self.parlagsymmetries = [np.array(np.dot(self.M,np.dot(matrix,self.m))
+                                       ,dtype=C_DTYPE)
+                                      for matrix in self.parlagsymmetries]
+        ##
 
         symmetries = [m_a,m_b,m_A,m_B] + m_c_sym
 

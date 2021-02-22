@@ -19,8 +19,11 @@ n=4
 
 stay_parabolic = False
 stay_boundary = False
-insoluble_parabolic = False
+
+parabolic_lagragian = True
+
 parabolic_enrich = False
+parabolic_lagrangian_enrich = False
 
 if len(arg)>=2:
     n = int(arg[1])
@@ -30,7 +33,7 @@ if len(arg)==7:
     stay_boundary = (int(arg[5])==1)
     insoluble_parabolic = (int(arg[6])==1)
 
-if insoluble_parabolic and n!=0:
+if parabolic_lagragian and n!=0:
     X = np.clongdouble(
     4*np.cos(np.longdouble(np.pi)/n)**2/(-8*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 2*np.sqrt(np.clongdouble(16*np.cos(np.longdouble(np.pi)/n)**8 - 8*np.cos(np.longdouble(np.pi)/n)**6 - 7*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 1)) + 2)**(1/3) + (-8*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 2*np.sqrt(np.clongdouble(16*np.cos(np.longdouble(np.pi)/n)**8 - 8*np.cos(np.longdouble(np.pi)/n)**6 - 7*np.cos(np.longdouble(np.pi)/n)**4 - 2*np.cos(np.longdouble(np.pi)/n)**2 + 1)) + 2)**(1/3) + 1
     ).real
@@ -78,8 +81,7 @@ interf = interface.Interface(path_results)
 
 solution = deform_triangle_solutions.DeformTriangleSolution(parameter,n)
 
-
-if not parabolic_enrich:
+if not parabolic_enrich and not parabolic_lagrangian_enrich:
 
     interf.representation_computation(solution, name, path_name)
 
@@ -89,15 +91,15 @@ else:
     length_words_enrichment = interf.length_words_enrichment
 
     cap_time = time()
-    solution.put_parsymmetries()
+    solution.put_parsymmetries(parabolic_enrich,parabolic_lagrangian_enrich)
     interf.only_points_result = True
     interf.length_words = 5
     interf.length_words_enrichment = 5
     points_para = interf.representation_computation(solution, name, path_name)
 
     print('Duration of computation of additional points: ' + str(time()-cap_time))
-
     points_para = postcomputation.PU_2_1_certification(points_para)
+    print('Number of additional points: ' + str(len(points_para)))
 
     solution.forget_parsymmetries()
     interf.only_points_result = False
