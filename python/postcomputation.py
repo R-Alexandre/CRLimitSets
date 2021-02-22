@@ -503,7 +503,8 @@ def PU_2_1_certification(set_points):
                              + '% of the points.')
         set_points = set_points[:m]
         return set_points[:]
-
+    return set_points
+    
 @jit(nopython=True, cache=True)
 def cherry_picking_PU_2_1(set_points):
 # cherry picks the point so that is_PU_2_1() is in bounds
