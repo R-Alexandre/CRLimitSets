@@ -134,15 +134,10 @@ class Interface(object):
 
             symmetries = solution.elementary_symmetries
 
-            stack_ram = np.empty([len(set_points_3d)
+            stack_blank = np.empty([len(set_points_3d)
                                   * (2**(len(symmetries))), 3]
                                  ,dtype=np.dtype(C_DTYPE))
-
-            stack_blank = stack_ram[:]
             stack=[]
-
-            stack_ram[:len(set_points_3d)] = set_points_3d
-            index_stack_ram = len(set_points_3d)
 
             for symmetry in symmetries:
 
@@ -155,8 +150,6 @@ class Interface(object):
 
                     set_points_3d = np.concatenate([set_points_3d,stack[:m]])
 
-                    stack_ram[index_stack_ram:index_stack_ram+m] = stack[:m]
-                    index_stack_ram += m
                 else:
                     do_enrichment = False
 
@@ -168,12 +161,11 @@ class Interface(object):
                 print('Now Sorting.')
 
             w = time.time()
-            stack_ram.resize((index_stack_ram,3))
-            nei, index = np.unique(stack_ram.round(decimals=DECIMALS_FILTER),
-                                   axis=0,return_index=True)
-            stack_ram = stack_ram[index]
 
-            set_points_3d = stack_ram
+
+            nei, index = np.unique(set_points_3d.round(decimals=DECIMALS_FILTER),
+                                   axis=0,return_index=True)
+            set_points_3d = set_points_3d[index]
 
             if TRACE_PLOT or not CLEAN_RDIR:
                 file = open(path_points,'a')

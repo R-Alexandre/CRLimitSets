@@ -43,7 +43,7 @@ AUTOMATIC_STEREOGRAPHIC_BASE_POINT = False
 # numpy.finfo(numpy.cdouble)
 # donne 15 decimales significatives
 EPSILON = 1e-14
-DECIMALS_FILTER = 8
+DECIMALS_FILTER = 5
 ITERATIONS_NUMBER = 15
 FILTER_SHOW = True
 

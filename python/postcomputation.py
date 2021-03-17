@@ -499,12 +499,12 @@ def PU_2_1_certification(set_points):
         print('PU(2,1) error mesurement is too high: '
                          + str(pu_2_1_error) + ' ... cherry picking')
         (set_points,m) = cherry_picking_PU_2_1(set_points)
-        print('... removed ' + str((len(set_points)-m)/(1.*len(set_points)))
+        print('... removed ' + str((len(set_points)-m)/(1.*len(set_points))*100)
                              + '% of the points.')
         set_points = set_points[:m]
         return set_points[:]
     return set_points
-    
+
 @jit(nopython=True, cache=True)
 def cherry_picking_PU_2_1(set_points):
 # cherry picks the point so that is_PU_2_1() is in bounds
