@@ -134,9 +134,13 @@ class Interface(object):
 
             symmetries = solution.elementary_symmetries
 
-            stack_blank = np.empty([len(set_points_3d)
-                                  * (2**(len(symmetries))), 3]
+            l_size = len(set_points_3d) * (2**(len(symmetries)))
+            if LIGHT_RAM and l_size > 1e9:
+                l_size = 1000000000
+
+            stack_blank = np.empty([l_size, 3]
                                  ,dtype=np.dtype(C_DTYPE))
+
             stack=[]
 
             for symmetry in symmetries:
@@ -147,8 +151,13 @@ class Interface(object):
                     stack,m = computation.symmetrize(set_points_3d,
                                                      symmetry,
                                                      stack_blank)
-
-                    set_points_3d = np.concatenate([set_points_3d,stack[:m]])
+                    if LIGHT_RAM:
+                        transition_stack = stack[:m]
+                        nei, index = np.unique(transition_stack.round(decimals=DECIMALS_FILTER),
+                                   axis=0,return_index=True)
+                        set_points_3d = np.concatenate([set_points_3d,transition_stack[index]])
+                    else:
+                        set_points_3d = np.concatenate([set_points_3d,stack[:m]])
 
                 else:
                     do_enrichment = False
