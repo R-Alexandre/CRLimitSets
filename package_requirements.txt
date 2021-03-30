@@ -17,7 +17,7 @@ pickleshare==0.7.5
 plink==2.3.1
 prompt-toolkit==3.0.8
 ptyprocess==0.6.0
-Pygments==2.7.2
+Pygments==2.7.4
 pypng==0.0.20
 scipy==1.5.4
 six==1.15.0
