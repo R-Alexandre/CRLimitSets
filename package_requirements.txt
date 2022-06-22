@@ -10,7 +10,7 @@ jedi==0.17.2
 llvmlite==0.35.0
 networkx==2.5
 numba==0.52.0
-numpy==1.19.4
+numpy==1.22.0
 parso==0.7.1
 pexpect==4.8.0
 pickleshare==0.7.5
